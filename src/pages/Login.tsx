@@ -1,100 +1,133 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription,
-  CardContent,
-  CardFooter
-} from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PieChart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const formSchema = z.object({
+  username: z.string().min(1, { message: 'Username is required' }),
+  password: z.string().min(4, { message: 'Password must be at least 4 characters' }),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (data: FormData) => {
+    setLoading(true);
+    setLoginError(null);
+
     try {
-      const success = await login(username, password);
+      const success = await login(data.username, data.password);
       if (success) {
-        navigate('/');
+        navigate('/dashboard');
+      } else {
+        setLoginError('Invalid username or password');
       }
+    } catch (error) {
+      setLoginError('An error occurred during login');
+      console.error('Login error:', error);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-primary rounded-md p-2">
-              <PieChart className="h-8 w-8 text-primary-foreground" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold">redigERP</h1>
-          <p className="text-muted-foreground mt-2">Sign in to access your dashboard</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900 p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="flex flex-col items-center justify-center mb-6">
+          <img 
+            src="https://redig-apps.com/assets/img/logos/logo_w.png" 
+            alt="Redig ERP" 
+            className="h-16 mb-2" 
+          />
+          <h1 className="text-2xl font-bold text-white">Enterprise Resource Planning</h1>
         </div>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>
-              Enter your credentials to continue
+
+        <Card className="w-full backdrop-blur-sm bg-background/80 border-gray-800">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Sign in</CardTitle>
+            <CardDescription className="text-center">
+              Enter your credentials to access your account
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="space-y-4">
+              {loginError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{loginError}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
+                  type="text"
                   placeholder="Enter your username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
+                  {...register('username')}
                 />
+                {errors.username && (
+                  <p className="text-sm text-red-500">{errors.username.message}</p>
+                )}
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <Button variant="link" className="p-0 h-auto text-xs">
+                    Forgot password?
+                  </Button>
+                </div>
                 <Input
                   id="password"
                   type="password"
                   placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
+                  {...register('password')}
                 />
+                {errors.password && (
+                  <p className="text-sm text-red-500">{errors.password.message}</p>
+                )}
               </div>
             </CardContent>
+
             <CardFooter>
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600"
+                disabled={loading}
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in...' : 'Sign in'}
               </Button>
             </CardFooter>
           </form>
         </Card>
-        
-        <div className="mt-4 text-center text-sm text-muted-foreground">
-          <p>Default credentials: <span className="font-medium">redig / 6666</span></p>
-        </div>
       </div>
     </div>
   );

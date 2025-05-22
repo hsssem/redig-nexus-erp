@@ -17,6 +17,7 @@ import Invoices from './pages/Invoices';
 import Projects from './pages/Projects';
 import Team from './pages/Team';
 import Meetings from './pages/Meetings';
+import Analytics from './pages/Analytics';
 import { AppSettingsProvider } from './contexts/AppSettingsContext';
 
 const queryClient = new QueryClient();
@@ -84,6 +85,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Team />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/analytics"
+                  element={
+                    <ProtectedRoute>
+                      <Analytics />
                     </ProtectedRoute>
                   }
                 />

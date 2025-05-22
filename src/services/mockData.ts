@@ -1,3 +1,4 @@
+
 // Customer Data Types
 export interface Customer {
   id: string;
@@ -20,7 +21,7 @@ export interface Task {
   priority: 'low' | 'medium' | 'high';
   dueDate: string;
   assignedTo: string;
-  project?: string;
+  project: string; // Now required
   createdAt: string;
 }
 
@@ -35,6 +36,7 @@ export interface Meeting {
   description?: string;
   location?: string;
   status: 'scheduled' | 'completed' | 'canceled';
+  project: string; // Added project reference
 }
 
 // Invoice Data Types
@@ -49,6 +51,7 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   customer: string;
+  project: string; // Added project reference
   date: string;
   dueDate: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue';
@@ -69,9 +72,12 @@ export interface Project {
   startDate: string;
   endDate?: string;
   budget?: number;
+  hours: number; // Added hours field
+  days: number; // Added days field (calculated)
   progress: number;
   manager: string;
   team: string[];
+  isPaid: boolean; // Added payment status
 }
 
 // Team Member Data Types
@@ -154,7 +160,7 @@ export const tasks: Task[] = [
     priority: 'high',
     dueDate: '2023-06-30',
     assignedTo: 'Alice Cooper',
-    project: 'Financial Reporting',
+    project: '1', // TechCorp Website Redesign
     createdAt: '2023-06-01'
   },
   {
@@ -165,7 +171,7 @@ export const tasks: Task[] = [
     priority: 'medium',
     dueDate: '2023-07-15',
     assignedTo: 'Bob Thompson',
-    project: 'Client Onboarding',
+    project: '2', // Innovate Co App Development
     createdAt: '2023-06-10'
   },
   {
@@ -176,7 +182,7 @@ export const tasks: Task[] = [
     priority: 'medium',
     dueDate: '2023-07-20',
     assignedTo: 'Charlie Martinez',
-    project: 'Marketing',
+    project: '1', // TechCorp Website Redesign
     createdAt: '2023-06-05'
   },
   {
@@ -187,6 +193,7 @@ export const tasks: Task[] = [
     priority: 'low',
     dueDate: '2023-08-01',
     assignedTo: 'Dana Johnson',
+    project: '3', // DataFlow Systems Integration
     createdAt: '2023-06-15'
   },
   {
@@ -197,7 +204,7 @@ export const tasks: Task[] = [
     priority: 'high',
     dueDate: '2023-06-25',
     assignedTo: 'Evan Williams',
-    project: 'IT Infrastructure',
+    project: '4', // WebWorks Infrastructure Update
     createdAt: '2023-06-20'
   }
 ];
@@ -213,7 +220,8 @@ export const meetings: Meeting[] = [
     attendees: ['John Smith', 'Alice Cooper', 'Bob Thompson'],
     description: 'Review Q2 performance and discuss Q3 goals',
     location: 'Conference Room A',
-    status: 'scheduled'
+    status: 'scheduled',
+    project: '1' // TechCorp Website Redesign
   },
   {
     id: '2',
@@ -224,7 +232,8 @@ export const meetings: Meeting[] = [
     attendees: ['Charlie Martinez', 'Dana Johnson', 'Evan Williams'],
     description: 'Brainstorming session for new product features',
     location: 'Meeting Room 2',
-    status: 'scheduled'
+    status: 'scheduled',
+    project: '2' // Innovate Co App Development
   },
   {
     id: '3',
@@ -233,7 +242,8 @@ export const meetings: Meeting[] = [
     startTime: '11:00',
     endTime: '12:00',
     attendees: ['Dana Johnson', 'Frank Miller', 'Grace Lee'],
-    status: 'completed'
+    status: 'completed',
+    project: '5' // Global Technologies Training Program
   },
   {
     id: '4',
@@ -244,7 +254,8 @@ export const meetings: Meeting[] = [
     attendees: ['Emily Davis', 'Charlie Martinez', 'Alice Cooper'],
     description: 'Demo of new features for WebWorks team',
     location: 'Virtual (Zoom)',
-    status: 'scheduled'
+    status: 'scheduled',
+    project: '4' // WebWorks Infrastructure Update
   },
   {
     id: '5',
@@ -255,7 +266,8 @@ export const meetings: Meeting[] = [
     attendees: ['Alice Cooper', 'Bob Thompson', 'Dana Johnson'],
     description: 'Annual budget planning session',
     location: 'Conference Room B',
-    status: 'scheduled'
+    status: 'scheduled',
+    project: '3' // DataFlow Systems Integration
   }
 ];
 
@@ -264,6 +276,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2023-001',
     customer: 'TechCorp Inc.',
+    project: '1', // TechCorp Website Redesign
     date: '2023-06-01',
     dueDate: '2023-07-01',
     status: 'sent',
@@ -291,6 +304,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2023-002',
     customer: 'Innovate Co',
+    project: '2', // Innovate Co App Development
     date: '2023-05-15',
     dueDate: '2023-06-15',
     status: 'paid',
@@ -310,6 +324,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2023-003',
     customer: 'DataFlow Systems',
+    project: '3', // DataFlow Systems Integration
     date: '2023-06-10',
     dueDate: '2023-07-10',
     status: 'draft',
@@ -336,6 +351,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2023-004',
     customer: 'WebWorks',
+    project: '4', // WebWorks Infrastructure Update
     date: '2023-05-01',
     dueDate: '2023-06-01',
     status: 'overdue',
@@ -355,6 +371,7 @@ export const invoices: Invoice[] = [
   {
     id: 'INV-2023-005',
     customer: 'Global Technologies',
+    project: '5', // Global Technologies Training Program
     date: '2023-06-20',
     dueDate: '2023-07-20',
     status: 'sent',
@@ -391,9 +408,12 @@ export const projects: Project[] = [
     startDate: '2023-05-01',
     endDate: '2023-08-31',
     budget: 25000,
+    hours: 240,
+    days: 40,
     progress: 100,
     manager: 'Charlie Martinez',
-    team: ['Alice Cooper', 'Bob Thompson', 'Dana Johnson']
+    team: ['Alice Cooper', 'Bob Thompson', 'Dana Johnson'],
+    isPaid: true
   },
   {
     id: '2',
@@ -403,9 +423,12 @@ export const projects: Project[] = [
     status: 'projectStarted',
     startDate: '2023-04-15',
     budget: 50000,
+    hours: 400,
+    days: 67,
     progress: 35,
     manager: 'Bob Thompson',
-    team: ['Evan Williams', 'Frank Miller', 'Grace Lee']
+    team: ['Evan Williams', 'Frank Miller', 'Grace Lee'],
+    isPaid: false
   },
   {
     id: '3',
@@ -416,9 +439,12 @@ export const projects: Project[] = [
     startDate: '2023-03-01',
     endDate: '2023-09-30',
     budget: 75000,
+    hours: 560,
+    days: 93,
     progress: 80,
     manager: 'Alice Cooper',
-    team: ['Charlie Martinez', 'Dana Johnson', 'Evan Williams']
+    team: ['Charlie Martinez', 'Dana Johnson', 'Evan Williams'],
+    isPaid: false
   },
   {
     id: '4',
@@ -429,9 +455,12 @@ export const projects: Project[] = [
     startDate: '2023-01-15',
     endDate: '2023-04-30',
     budget: 30000,
+    hours: 320,
+    days: 53,
     progress: 100,
     manager: 'Evan Williams',
-    team: ['Frank Miller', 'Grace Lee']
+    team: ['Frank Miller', 'Grace Lee'],
+    isPaid: true
   },
   {
     id: '5',
@@ -442,9 +471,12 @@ export const projects: Project[] = [
     startDate: '2023-06-01',
     endDate: '2023-10-31',
     budget: 15000,
+    hours: 180,
+    days: 30,
     progress: 10,
     manager: 'Dana Johnson',
-    team: ['Alice Cooper', 'Grace Lee']
+    team: ['Alice Cooper', 'Grace Lee'],
+    isPaid: true
   },
   {
     id: '6',
@@ -454,9 +486,12 @@ export const projects: Project[] = [
     status: 'potential',
     startDate: '2023-09-01',
     budget: 45000,
+    hours: 360,
+    days: 60,
     progress: 0,
     manager: 'Bob Thompson',
-    team: ['Evan Williams', 'Charlie Martinez']
+    team: ['Evan Williams', 'Charlie Martinez'],
+    isPaid: false
   }
 ];
 
@@ -541,45 +576,85 @@ export const teamMembers: TeamMember[] = [
   }
 ];
 
-// Dashboard statistics
-export const statistics = {
-  totalCustomers: customers.length,
-  activeCustomers: customers.filter(c => c.status === 'active').length,
-  totalProjects: projects.length,
-  activeProjects: projects.filter(p => p.status === 'active').length,
-  totalInvoices: invoices.length,
-  invoiceValue: invoices.reduce((acc, inv) => acc + inv.total, 0),
-  pendingTasks: tasks.filter(t => t.status !== 'completed').length,
-  teamMembers: teamMembers.length,
-  recentActivity: [
-    { id: '1', type: 'invoice', action: 'created', entity: 'INV-2023-005', user: 'Alice Cooper', timestamp: '2023-06-20 09:15' },
-    { id: '2', type: 'customer', action: 'added', entity: 'Global Technologies', user: 'Bob Thompson', timestamp: '2023-06-19 11:30' },
-    { id: '3', type: 'project', action: 'updated', entity: 'TechCorp Website Redesign', user: 'Charlie Martinez', timestamp: '2023-06-18 14:45' },
-    { id: '4', type: 'task', action: 'completed', entity: 'Server Maintenance', user: 'Evan Williams', timestamp: '2023-06-17 16:20' },
-    { id: '5', type: 'meeting', action: 'scheduled', entity: 'Budget Planning FY24', user: 'Dana Johnson', timestamp: '2023-06-16 10:00' }
-  ],
-  monthlyRevenue: [
-    { month: 'Jan', revenue: 12000 },
-    { month: 'Feb', revenue: 15000 },
-    { month: 'Mar', revenue: 18000 },
-    { month: 'Apr', revenue: 16000 },
-    { month: 'May', revenue: 21000 },
-    { month: 'Jun', revenue: 20000 },
-    { month: 'Jul', revenue: 0 },
-    { month: 'Aug', revenue: 0 },
-    { month: 'Sep', revenue: 0 },
-    { month: 'Oct', revenue: 0 },
-    { month: 'Nov', revenue: 0 },
-    { month: 'Dec', revenue: 0 }
-  ],
-  projectStatus: [
-    { status: 'Active', count: projects.filter(p => p.status === 'active').length },
-    { status: 'Completed', count: projects.filter(p => p.status === 'completed').length },
-    { status: 'On Hold', count: projects.filter(p => p.status === 'on-hold').length },
-    { status: 'Potential', count: projects.filter(p => p.status === 'potential').length },
-    { status: 'OK Given', count: projects.filter(p => p.status === 'okGiven').length },
-    { status: 'Project Started', count: projects.filter(p => p.status === 'projectStarted').length },
-    { status: 'Beta Version', count: projects.filter(p => p.status === 'betaVersion').length },
-    { status: 'Launched and Verified', count: projects.filter(p => p.status === 'launchedAndVerified').length }
-  ]
+// Helper functions for statistics
+export const getProjectsByMonth = (month: number, year: number = new Date().getFullYear()) => {
+  return projects.filter(project => {
+    const projectDate = new Date(project.startDate);
+    return projectDate.getMonth() === month && projectDate.getFullYear() === year;
+  });
 };
+
+export const getMonthlyRevenue = (month: number, year: number = new Date().getFullYear()) => {
+  const completedProjects = projects.filter(project => {
+    const projectDate = new Date(project.startDate);
+    return projectDate.getMonth() === month && 
+           projectDate.getFullYear() === year &&
+           (project.status === 'completed' || project.status === 'launchedAndVerified');
+  });
+  
+  return completedProjects.reduce((sum, project) => sum + (project.budget || 0), 0);
+};
+
+export const getTotalPaidProjects = () => {
+  return projects.filter(p => p.isPaid).length;
+};
+
+export const getTotalUnpaidProjects = () => {
+  return projects.filter(p => !p.isPaid).length;
+};
+
+// Dashboard statistics
+export const calculateStatistics = (selectedMonth: number = new Date().getMonth()) => {
+  const currentYear = new Date().getFullYear();
+  
+  return {
+    totalCustomers: customers.length,
+    activeCustomers: customers.filter(c => c.status === 'active').length,
+    totalProjects: projects.length,
+    activeProjects: projects.filter(p => p.status === 'active' || p.status === 'projectStarted' || p.status === 'betaVersion').length,
+    completedProjects: projects.filter(p => p.status === 'completed' || p.status === 'launchedAndVerified').length,
+    paidProjects: getTotalPaidProjects(),
+    unpaidProjects: getTotalUnpaidProjects(),
+    totalInvoices: invoices.length,
+    paidInvoices: invoices.filter(i => i.status === 'paid').length,
+    invoiceValue: invoices.reduce((acc, inv) => acc + inv.total, 0),
+    pendingTasks: tasks.filter(t => t.status !== 'completed').length,
+    teamMembers: teamMembers.length,
+    monthlyRevenue: getMonthlyRevenue(selectedMonth),
+    thisMonthProjects: getProjectsByMonth(selectedMonth).length,
+    recentActivity: [
+      { id: '1', type: 'invoice', action: 'created', entity: 'INV-2023-005', user: 'Alice Cooper', timestamp: '2023-06-20 09:15' },
+      { id: '2', type: 'customer', action: 'added', entity: 'Global Technologies', user: 'Bob Thompson', timestamp: '2023-06-19 11:30' },
+      { id: '3', type: 'project', action: 'updated', entity: 'TechCorp Website Redesign', user: 'Charlie Martinez', timestamp: '2023-06-18 14:45' },
+      { id: '4', type: 'task', action: 'completed', entity: 'Server Maintenance', user: 'Evan Williams', timestamp: '2023-06-17 16:20' },
+      { id: '5', type: 'meeting', action: 'scheduled', entity: 'Budget Planning FY24', user: 'Dana Johnson', timestamp: '2023-06-16 10:00' }
+    ],
+    monthlyRevenueData: [
+      { month: 'Jan', revenue: 12000 },
+      { month: 'Feb', revenue: 15000 },
+      { month: 'Mar', revenue: 18000 },
+      { month: 'Apr', revenue: 16000 },
+      { month: 'May', revenue: 21000 },
+      { month: 'Jun', revenue: 20000 },
+      { month: 'Jul', revenue: 0 },
+      { month: 'Aug', revenue: 0 },
+      { month: 'Sep', revenue: 0 },
+      { month: 'Oct', revenue: 0 },
+      { month: 'Nov', revenue: 0 },
+      { month: 'Dec', revenue: 0 }
+    ],
+    projectStatus: [
+      { status: 'Active', count: projects.filter(p => p.status === 'active').length },
+      { status: 'Completed', count: projects.filter(p => p.status === 'completed').length },
+      { status: 'On Hold', count: projects.filter(p => p.status === 'on-hold').length },
+      { status: 'Potential', count: projects.filter(p => p.status === 'potential').length },
+      { status: 'OK Given', count: projects.filter(p => p.status === 'okGiven').length },
+      { status: 'Project Started', count: projects.filter(p => p.status === 'projectStarted').length },
+      { status: 'Beta Version', count: projects.filter(p => p.status === 'betaVersion').length },
+      { status: 'Launched and Verified', count: projects.filter(p => p.status === 'launchedAndVerified').length }
+    ]
+  };
+};
+
+// Initialize statistics
+export const statistics = calculateStatistics();
