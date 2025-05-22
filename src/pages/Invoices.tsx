@@ -184,7 +184,7 @@ const Invoices = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: "draft" | "sent" | "paid" | "overdue") => {
     switch (status) {
       case 'draft':
         return <Badge className="bg-gray-500 hover:bg-gray-600">Draft</Badge>;
@@ -300,7 +300,7 @@ const Invoices = () => {
   const sendInvoice = (invoice: Invoice) => {
     if (invoice.status === 'draft') {
       const updatedList = invoicesList.map(inv => 
-        inv.id === invoice.id ? { ...inv, status: 'sent' } : inv
+        inv.id === invoice.id ? { ...inv, status: 'sent' as const } : inv
       );
       setInvoicesList(updatedList);
       toast.success("Invoice sent to customer");
@@ -1015,15 +1015,15 @@ const Invoices = () => {
                   <div className="space-y-4 text-right">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span>${form.watch('subtotal').toFixed(2)}</span>
+                      <span>{currencySymbol}{form.watch('subtotal').toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Tax (10%):</span>
-                      <span>${form.watch('tax').toFixed(2)}</span>
+                      <span>{currencySymbol}{form.watch('tax').toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-bold">
                       <span>Total:</span>
-                      <span>${form.watch('total').toFixed(2)}</span>
+                      <span>{currencySymbol}{form.watch('total').toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -1035,7 +1035,6 @@ const Invoices = () => {
             </Form>
           </DialogContent>
         </Dialog>
-
       </PageContainer>
     </div>
   );
