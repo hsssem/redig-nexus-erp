@@ -43,9 +43,11 @@ const Analytics = () => {
   }, []);
 
   const taskCompletion = useMemo(() => {
+    // Fix the comparison by checking the actual possible values
     const completed = tasks.filter(task => task.status === 'completed').length;
     const inProgress = tasks.filter(task => task.status === 'in-progress').length;
-    const notStarted = tasks.filter(task => task.status === 'not-started').length;
+    // Change 'not-started' to one of the valid values in the Task type
+    const notStarted = tasks.filter(task => task.status === 'todo').length;
     
     return [
       { name: 'Completed', value: completed },
