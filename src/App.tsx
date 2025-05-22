@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Tasks from "./pages/Tasks";
+import Meetings from "./pages/Meetings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,11 @@ const App = () => (
             <Route path="/tasks" element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            } />
+            <Route path="/meetings" element={
+              <ProtectedRoute>
+                <Meetings />
               </ProtectedRoute>
             } />
             

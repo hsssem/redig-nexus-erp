@@ -20,9 +20,9 @@ const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities }) =
   const getIcon = (type: string) => {
     switch (type) {
       case 'invoice':
-        return <FileText className="h-5 w-5 text-blue-500" />;
+        return <FileText className="h-5 w-5 text-darkblue-500" />;
       case 'customer':
-        return <User className="h-5 w-5 text-green-500" />;
+        return <User className="h-5 w-5 text-darkyellow-500" />;
       case 'project':
         return <BriefcaseBusiness className="h-5 w-5 text-purple-500" />;
       case 'task':
@@ -52,14 +52,14 @@ const RecentActivityCard: React.FC<RecentActivityCardProps> = ({ activities }) =
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full gradient-card">
       <CardHeader className="pb-3">
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 max-h-[300px] overflow-auto scrollbar-hidden">
         {activities.map((activity) => (
-          <div key={activity.id} className="flex items-start space-x-3">
-            <div className="flex-shrink-0 mt-0.5">
+          <div key={activity.id} className="flex items-start space-x-3 p-2 rounded-md hover:bg-background/50 transition-all duration-200">
+            <div className="flex-shrink-0 mt-0.5 p-1.5 bg-background rounded-full">
               {getIcon(activity.type)}
             </div>
             <div className="flex-1 space-y-1">

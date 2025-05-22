@@ -10,6 +10,9 @@ import { statistics, invoices } from '@/services/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileText, BriefcaseBusiness, CheckSquare } from 'lucide-react';
 
+// Define the ActivityItem type to match what's expected in RecentActivityCard
+type ActivityType = 'invoice' | 'customer' | 'project' | 'task' | 'meeting';
+
 // Define a helper function to ensure type safety
 const getTypeCheckedActivities = () => {
   return statistics.recentActivity.map(activity => {
@@ -19,8 +22,8 @@ const getTypeCheckedActivities = () => {
                         activity.type === 'project' || 
                         activity.type === 'task' || 
                         activity.type === 'meeting') 
-                      ? activity.type 
-                      : 'task'; // Default fallback if type is invalid
+                      ? activity.type as ActivityType 
+                      : 'task' as ActivityType; 
     
     return {
       ...activity,
@@ -47,26 +50,30 @@ const Dashboard = () => {
         <StatsCard
           title="Total Customers"
           value={statistics.totalCustomers}
-          icon={<Users className="h-6 w-6 text-primary" />}
+          icon={<Users className="h-6 w-6 text-darkblue-500" />}
           description={`${statistics.activeCustomers} active`}
+          className="gradient-card"
         />
         <StatsCard
           title="Total Invoices"
           value={`$${statistics.invoiceValue.toLocaleString()}`}
-          icon={<FileText className="h-6 w-6 text-primary" />}
+          icon={<FileText className="h-6 w-6 text-darkblue-500" />}
           description={`${statistics.totalInvoices} invoices`}
+          className="gradient-card"
         />
         <StatsCard
           title="Active Projects"
           value={statistics.activeProjects}
-          icon={<BriefcaseBusiness className="h-6 w-6 text-primary" />}
+          icon={<BriefcaseBusiness className="h-6 w-6 text-darkblue-500" />}
           description={`${statistics.totalProjects} total`}
+          className="gradient-card"
         />
         <StatsCard
           title="Pending Tasks"
           value={statistics.pendingTasks}
-          icon={<CheckSquare className="h-6 w-6 text-primary" />}
+          icon={<CheckSquare className="h-6 w-6 text-darkblue-500" />}
           description="Across all projects"
+          className="gradient-card"
         />
       </div>
       
