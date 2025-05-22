@@ -64,9 +64,17 @@ const Team = () => {
   });
 
   const handleCreateMember = (data: FormValues) => {
+    // Ensure all required properties are populated
     const newMember: TeamMember = {
       id: `${teamList.length + 1}`,
-      ...data
+      name: data.name,
+      role: data.role,
+      email: data.email,
+      phone: data.phone,
+      department: data.department,
+      joiningDate: data.joiningDate,
+      status: data.status,
+      avatar: data.avatar
     };
     
     setTeamList([...teamList, newMember]);
@@ -77,7 +85,19 @@ const Team = () => {
   const handleUpdateMember = (data: FormValues) => {
     if (selectedMember) {
       const updatedList = teamList.map(member => 
-        member.id === selectedMember.id ? { ...member, ...data } : member
+        member.id === selectedMember.id 
+          ? {
+              ...member,
+              name: data.name,
+              role: data.role,
+              email: data.email,
+              phone: data.phone,
+              department: data.department,
+              joiningDate: data.joiningDate,
+              status: data.status,
+              avatar: data.avatar
+            } 
+          : member
       );
       
       setTeamList(updatedList);

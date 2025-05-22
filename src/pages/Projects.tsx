@@ -68,9 +68,19 @@ const Projects = () => {
   });
 
   const handleCreateProject = (data: FormValues) => {
+    // Ensure all required properties are populated
     const newProject: Project = {
       id: `${projectsList.length + 1}`,
-      ...data
+      name: data.name,
+      description: data.description,
+      client: data.client,
+      status: data.status,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      budget: data.budget,
+      progress: data.progress,
+      manager: data.manager,
+      team: data.team
     };
     
     setProjectsList([...projectsList, newProject]);
@@ -81,7 +91,21 @@ const Projects = () => {
   const handleUpdateProject = (data: FormValues) => {
     if (selectedProject) {
       const updatedList = projectsList.map(project => 
-        project.id === selectedProject.id ? { ...project, ...data } : project
+        project.id === selectedProject.id 
+          ? { 
+              ...project,
+              name: data.name,
+              description: data.description,
+              client: data.client,
+              status: data.status,
+              startDate: data.startDate,
+              endDate: data.endDate,
+              budget: data.budget,
+              progress: data.progress,
+              manager: data.manager,
+              team: data.team
+            } 
+          : project
       );
       
       setProjectsList(updatedList);
