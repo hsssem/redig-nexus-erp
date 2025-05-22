@@ -27,11 +27,12 @@ export const useAuth = () => {
   return context;
 };
 
+// We separate the navigator logic from the provider
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const navigate = useNavigate();
-
+  
+  // We'll handle navigation in a separate component that has Router context
   useEffect(() => {
     // Check if user is already logged in
     const storedUser = localStorage.getItem('redigERP_user');
@@ -72,7 +73,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setIsAuthenticated(false);
     localStorage.removeItem('redigERP_user');
-    navigate('/login');
     toast.info('Logged out successfully');
   };
 
@@ -81,4 +81,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Create a Navigation wrapper to handle redirects
+export const AuthNavigation: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
+  // Handle navigation after login/logout
+  useEffect(() => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, navigate]);
+  
+  return <>{children}</>;
 };

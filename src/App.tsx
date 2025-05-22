@@ -9,7 +9,7 @@ import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Settings from './pages/Settings';
 import Index from './pages/Index';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, AuthNavigation } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Tasks from './pages/Tasks';
 import Customers from './pages/Customers';
@@ -25,12 +25,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" attribute="class">
-        <AppSettingsProvider>
-          <AuthProvider>
-            <Router>
+        <Router>
+          <AppSettingsProvider>
+            <AuthProvider>
               <Routes>
-                <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/" element={<Index />} />
                 <Route
                   path="/dashboard"
                   element={
@@ -98,10 +98,10 @@ function App() {
                 <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<Navigate to="/404" replace />} />
               </Routes>
-            </Router>
-            <Toaster position="top-right" />
-          </AuthProvider>
-        </AppSettingsProvider>
+              <Toaster position="top-right" />
+            </AuthProvider>
+          </AppSettingsProvider>
+        </Router>
       </ThemeProvider>
     </QueryClientProvider>
   );
