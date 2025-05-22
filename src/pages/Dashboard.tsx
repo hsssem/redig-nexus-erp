@@ -10,8 +10,30 @@ import { statistics, invoices } from '@/services/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileText, BriefcaseBusiness, CheckSquare } from 'lucide-react';
 
+// Define a helper function to ensure type safety
+const getTypeCheckedActivities = () => {
+  return statistics.recentActivity.map(activity => {
+    // Ensure the type is one of the valid types
+    const validType = (activity.type === 'invoice' || 
+                        activity.type === 'customer' || 
+                        activity.type === 'project' || 
+                        activity.type === 'task' || 
+                        activity.type === 'meeting') 
+                      ? activity.type 
+                      : 'task'; // Default fallback if type is invalid
+    
+    return {
+      ...activity,
+      type: validType
+    };
+  });
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
+  
+  // Get type-checked activities
+  const typeSafeActivities = getTypeCheckedActivities();
   
   return (
     <PageContainer>
@@ -54,7 +76,7 @@ const Dashboard = () => {
           <RevenueChart data={statistics.monthlyRevenue} />
         </div>
         <div>
-          <RecentActivityCard activities={statistics.recentActivity} />
+          <RecentActivityCard activities={typeSafeActivities} />
         </div>
       </div>
       
