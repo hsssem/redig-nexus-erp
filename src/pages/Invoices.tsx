@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { invoices, Invoice, InvoiceItem } from '@/services/mockData';
+import { invoices, Invoice, InvoiceItem, projects } from '@/services/mockData';
 import Sidebar from '@/components/layout/Sidebar';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -31,6 +31,7 @@ import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 const formSchema = z.object({
   customer: z.string().min(1, "Customer is required"),
+  project: z.string().min(1, "Project is required"),
   notes: z.string().optional(),
   date: z.string().min(1, "Invoice date is required"),
   dueDate: z.string().min(1, "Due date is required"),
@@ -64,6 +65,7 @@ const Invoices = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       customer: '',
+      project: '',
       date: format(new Date(), 'yyyy-MM-dd'),
       dueDate: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
       status: 'draft',
@@ -88,6 +90,7 @@ const Invoices = () => {
     const newInvoice: Invoice = {
       id: `INV-${new Date().getFullYear()}-${invoicesList.length + 1}`.padStart(12, '0'),
       customer: data.customer,
+      project: data.project,
       date: data.date,
       dueDate: data.dueDate,
       status: data.status,
@@ -101,7 +104,7 @@ const Invoices = () => {
       subtotal: data.subtotal,
       tax: data.tax,
       total: data.total,
-      notes: data.notes
+      notes: data.notes || ''
     };
     
     setInvoicesList([...invoicesList, newInvoice]);
@@ -116,6 +119,7 @@ const Invoices = () => {
           ? { 
               ...invoice, 
               customer: data.customer,
+              project: data.project,
               date: data.date,
               dueDate: data.dueDate,
               status: data.status,
@@ -123,7 +127,7 @@ const Invoices = () => {
               subtotal: data.subtotal,
               tax: data.tax,
               total: data.total,
-              notes: data.notes
+              notes: data.notes || ''
             } 
           : invoice
       );
@@ -213,6 +217,7 @@ const Invoices = () => {
     setSelectedInvoice(invoice);
     form.reset({
       customer: invoice.customer,
+      project: invoice.project,
       date: invoice.date,
       dueDate: invoice.dueDate,
       status: invoice.status,
@@ -266,6 +271,7 @@ const Invoices = () => {
       tableRows.push(itemData);
     });
     
+    // Use the autotable plugin with proper typescript handling
     (doc as any).autoTable({
       startY: 75,
       head: [tableColumn],
@@ -306,6 +312,14 @@ const Invoices = () => {
       toast.success("Invoice sent to customer");
     } else {
       toast.info("Invoice already sent to customer");
+    }
+  };
+
+  // Update customer when project changes
+  const handleProjectChange = (projectId: string) => {
+    const selectedProject = projects.find(p => p.id === projectId);
+    if (selectedProject) {
+      form.setValue('customer', selectedProject.client);
     }
   };
 
@@ -351,6 +365,37 @@ const Invoices = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
+                          name="project"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Project</FormLabel>
+                              <Select 
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  handleProjectChange(value);
+                                }}
+                                value={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select project" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {projects.map((project) => (
+                                    <SelectItem key={project.id} value={project.id}>
+                                      {project.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
                           name="customer"
                           render={({ field }) => (
                             <FormItem>
@@ -376,7 +421,9 @@ const Invoices = () => {
                             </FormItem>
                           )}
                         />
-                        
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
                           name="status"
@@ -403,36 +450,35 @@ const Invoices = () => {
                             </FormItem>
                           )}
                         />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="date"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Invoice Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="dueDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Due Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Invoice Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={form.control}
+                            name="dueDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Due Date</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                       
                       <div className="border rounded-md p-4">
@@ -619,8 +665,8 @@ const Invoices = () => {
                   <TableRow>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Customer</TableHead>
+                    <TableHead>Project</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Due Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
@@ -632,8 +678,8 @@ const Invoices = () => {
                       <TableRow key={invoice.id} className="hover:bg-muted/30">
                         <TableCell className="font-medium">{invoice.id}</TableCell>
                         <TableCell>{invoice.customer}</TableCell>
+                        <TableCell>{projects.find(p => p.id === invoice.project)?.name || invoice.project}</TableCell>
                         <TableCell>{invoice.date}</TableCell>
-                        <TableCell>{invoice.dueDate}</TableCell>
                         <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                         <TableCell className="text-right">
                           {currencySymbol}{invoice.total.toLocaleString()}
@@ -733,6 +779,7 @@ const Invoices = () => {
                       <h3 className="text-sm font-medium text-muted-foreground">To</h3>
                       <div className="mt-1">
                         <p className="font-medium">{selectedInvoice.customer}</p>
+                        <p className="font-medium">Project: {projects.find(p => p.id === selectedInvoice.project)?.name || selectedInvoice.project}</p>
                       </div>
                     </div>
                   </div>
@@ -800,7 +847,7 @@ const Invoices = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Invoice Dialog - Similar to Create Dialog but with pre-filled values */}
+        {/* Edit Invoice Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[800px]">
             <DialogHeader>
@@ -812,8 +859,38 @@ const Invoices = () => {
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleUpdateInvoice)} className="space-y-4">
-                {/* Same form fields as Create Dialog, but pre-filled with selectedInvoice values */}
                 <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="project"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project</FormLabel>
+                        <Select 
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            handleProjectChange(value);
+                          }}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select project" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {projects.map((project) => (
+                              <SelectItem key={project.id} value={project.id}>
+                                {project.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                
                   <FormField
                     control={form.control}
                     name="customer"
@@ -844,6 +921,35 @@ const Invoices = () => {
                   
                   <FormField
                     control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="sent">Sent</SelectItem>
+                            <SelectItem value="paid">Paid</SelectItem>
+                            <SelectItem value="overdue">Overdue</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
                     name="date"
                     render={({ field }) => (
                       <FormItem>
@@ -870,33 +976,6 @@ const Invoices = () => {
                     )}
                   />
                 </div>
-                
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="draft">Draft</SelectItem>
-                          <SelectItem value="sent">Sent</SelectItem>
-                          <SelectItem value="paid">Paid</SelectItem>
-                          <SelectItem value="overdue">Overdue</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 
                 <div className="border rounded-md p-4">
                   <h3 className="font-medium mb-2">Invoice Items</h3>

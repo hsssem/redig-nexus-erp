@@ -72,7 +72,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data, showAnalysis = false 
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis dataKey="month" />
-              <YAxis formatter={(value) => `$${value}`} />
+              <YAxis tickFormatter={(value) => `$${value}`} />
               <Tooltip 
                 formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
                 labelFormatter={(label) => `Month: ${label}`}

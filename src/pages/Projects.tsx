@@ -39,6 +39,8 @@ const formSchema = z.object({
   progress: z.number().min(0).max(100),
   manager: z.string().min(1, "Manager is required"),
   team: z.array(z.string()).min(1, "At least one team member is required"),
+  hours: z.number().min(0, "Hours cannot be negative"),
+  isPaid: z.boolean()
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -63,11 +65,16 @@ const Projects = () => {
       budget: 0,
       progress: 0,
       manager: '',
-      team: []
+      team: [],
+      hours: 0,
+      isPaid: false
     }
   });
 
   const handleCreateProject = (data: FormValues) => {
+    // Calculate days based on hours (1 day = 6 hours)
+    const days = data.hours / 6;
+    
     // Ensure all required properties are populated
     const newProject: Project = {
       id: `${projectsList.length + 1}`,
@@ -80,7 +87,10 @@ const Projects = () => {
       budget: data.budget,
       progress: data.progress,
       manager: data.manager,
-      team: data.team
+      team: data.team,
+      hours: data.hours,
+      days: days,
+      isPaid: data.isPaid
     };
     
     setProjectsList([...projectsList, newProject]);
@@ -90,6 +100,9 @@ const Projects = () => {
 
   const handleUpdateProject = (data: FormValues) => {
     if (selectedProject) {
+      // Calculate days based on hours (1 day = 6 hours)
+      const days = data.hours / 6;
+      
       const updatedList = projectsList.map(project => 
         project.id === selectedProject.id 
           ? { 
@@ -103,7 +116,10 @@ const Projects = () => {
               budget: data.budget,
               progress: data.progress,
               manager: data.manager,
-              team: data.team
+              team: data.team,
+              hours: data.hours,
+              days: days,
+              isPaid: data.isPaid
             } 
           : project
       );
@@ -180,7 +196,9 @@ const Projects = () => {
       budget: project.budget || 0,
       progress: project.progress,
       manager: project.manager,
-      team: project.team
+      team: project.team,
+      hours: project.hours,
+      isPaid: project.isPaid
     });
     setIsEditDialogOpen(true);
   };
@@ -394,6 +412,50 @@ const Projects = () => {
                           )}
                         />
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="hours"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Hours</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  type="number" 
+                                  min="0" 
+                                  placeholder="Project hours" 
+                                  {...field}
+                                  onChange={e => field.onChange(Number(e.target.value))} 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className="text-xs text-muted-foreground">
+                                Days: {(field.value / 6).toFixed(1)} (Calculated as hours ÷ 6)
+                              </p>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="isPaid"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0 mt-8">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={field.value}
+                                  onChange={(e) => field.onChange(e.target.checked)}
+                                />
+                              </FormControl>
+                              <FormLabel>Project is paid</FormLabel>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
                       <FormField
                         control={form.control}
@@ -489,9 +551,10 @@ const Projects = () => {
                     <TableHead>Name</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Hours/Days</TableHead>
                     <TableHead>Progress</TableHead>
                     <TableHead>Manager</TableHead>
-                    <TableHead>Team</TableHead>
+                    <TableHead>Payment</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -502,6 +565,7 @@ const Projects = () => {
                         <TableCell className="font-medium">{project.name}</TableCell>
                         <TableCell>{project.client}</TableCell>
                         <TableCell>{getStatusBadge(project.status)}</TableCell>
+                        <TableCell>{project.hours}h / {project.days.toFixed(1)}d</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Progress value={project.progress} className="h-2" />
@@ -510,22 +574,10 @@ const Projects = () => {
                         </TableCell>
                         <TableCell>{project.manager}</TableCell>
                         <TableCell>
-                          <div className="flex -space-x-2">
-                            {project.team.slice(0, 3).map((member, index) => (
-                              <div 
-                                key={index}
-                                className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs border-2 border-background"
-                                title={member}
-                              >
-                                {member.slice(0, 2)}
-                              </div>
-                            ))}
-                            {project.team.length > 3 && (
-                              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs border-2 border-background">
-                                +{project.team.length - 3}
-                              </div>
-                            )}
-                          </div>
+                          {project.isPaid ? 
+                            <Badge className="bg-green-500">Paid</Badge> : 
+                            <Badge className="bg-orange-500">Unpaid</Badge>
+                          }
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center space-x-2">
@@ -549,7 +601,7 @@ const Projects = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
+                      <TableCell colSpan={8} className="text-center py-4">
                         No projects found
                       </TableCell>
                     </TableRow>
@@ -569,6 +621,10 @@ const Projects = () => {
                   <DialogTitle className="text-xl font-bold">{selectedProject.name}</DialogTitle>
                   <DialogDescription>
                     {getStatusBadge(selectedProject.status)}
+                    {selectedProject.isPaid ? 
+                      <Badge className="ml-2 bg-green-500">Paid</Badge> : 
+                      <Badge className="ml-2 bg-orange-500">Unpaid</Badge>
+                    }
                   </DialogDescription>
                 </DialogHeader>
                 
@@ -600,10 +656,14 @@ const Projects = () => {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Budget</h3>
                       <p>${selectedProject.budget?.toLocaleString() || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-muted-foreground">Hours/Days</h3>
+                      <p>{selectedProject.hours}h / {selectedProject.days.toFixed(1)}d</p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Progress</h3>
