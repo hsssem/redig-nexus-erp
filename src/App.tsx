@@ -1,5 +1,4 @@
-
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from './components/ui/sonner';
@@ -19,13 +18,18 @@ import Team from './pages/Team';
 import Meetings from './pages/Meetings';
 import Analytics from './pages/Analytics';
 import { AppSettingsProvider } from './contexts/AppSettingsContext';
+import Trash from './pages/Trash';
+import Leads from './pages/Leads';
+import Payments from './pages/Payments';
+import TodayOverview from './pages/TodayOverview';
+import PublicInvoiceView from './components/invoices/PublicInvoiceView';
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark" attribute="class">
+      <ThemeProvider defaultTheme="light" attribute="class">
         <Router>
           <AppSettingsProvider>
             <AuthProvider>
@@ -33,10 +37,26 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<Index />} />
                 <Route
+                  path="/today"
+                  element={
+                    <ProtectedRoute>
+                      <TodayOverview />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/dashboard"
                   element={
                     <ProtectedRoute>
                       <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/leads"
+                  element={
+                    <ProtectedRoute>
+                      <Leads />
                     </ProtectedRoute>
                   }
                 />
@@ -73,10 +93,24 @@ function App() {
                   }
                 />
                 <Route
+                  path="/invoice/:id"
+                  element={
+                    <InvoicePublicView />
+                  }
+                />
+                <Route
                   path="/projects"
                   element={
                     <ProtectedRoute>
                       <Projects />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/payments"
+                  element={
+                    <ProtectedRoute>
+                      <Payments />
                     </ProtectedRoute>
                   }
                 />
@@ -93,6 +127,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Analytics />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/trash"
+                  element={
+                    <ProtectedRoute>
+                      <Trash />
                     </ProtectedRoute>
                   }
                 />
@@ -115,5 +157,16 @@ function App() {
     </QueryClientProvider>
   );
 }
+
+// Public invoice view component
+const InvoicePublicView = () => {
+  const { id } = useParams();
+  // Simple component to display the invoice for public sharing
+  return (
+    <div className="container mx-auto p-6">
+      <PublicInvoiceView invoiceId={id} />
+    </div>
+  );
+};
 
 export default App;
