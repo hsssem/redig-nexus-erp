@@ -56,7 +56,7 @@ const Analytics = () => {
 
   const projectEfficiency = useMemo(() => {
     return projects.map(project => {
-      const projectTasks = tasks.filter(task => task.projectId === project.id);
+      const projectTasks = tasks.filter(task => task.project === project.id);
       const completedTasks = projectTasks.filter(task => task.status === 'completed').length;
       const efficiency = projectTasks.length > 0 ? (completedTasks / projectTasks.length) * 100 : 0;
       
@@ -311,14 +311,17 @@ const Analytics = () => {
                       type="number" 
                       dataKey="startDate" 
                       domain={['auto', 'auto']}
-                      tickFormatter={(unixTime) => format(new Date(unixTime), 'MMM dd')}
                       name="Start Date"
+                      tickFormatter={(unixTime) => format(new Date(unixTime), 'MMM dd')}
                     />
                     <YAxis type="number" dataKey="progress" name="Progress" unit="%" />
                     <ZAxis dataKey="budget" range={[50, 400]} name="Budget" />
                     <Tooltip
                       formatter={(value, name) => {
-                        if (name === 'Start Date') return [format(new Date(value), 'MMM dd, yyyy'), name];
+                        if (name === 'Start Date') {
+                          // Check if value is a number and convert only if it is
+                          return [typeof value === 'number' ? format(new Date(value), 'MMM dd, yyyy') : String(value), name];
+                        }
                         if (name === 'Progress') return [`${value}%`, name];
                         return [`${currencySymbol}${value}`, 'Budget'];
                       }}

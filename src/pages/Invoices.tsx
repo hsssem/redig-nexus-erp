@@ -123,7 +123,7 @@ const Invoices = () => {
               date: data.date,
               dueDate: data.dueDate,
               status: data.status,
-              items: data.items,
+              items: data.items as InvoiceItem[],
               subtotal: data.subtotal,
               tax: data.tax,
               total: data.total,
@@ -331,7 +331,7 @@ const Invoices = () => {
           title="Invoices"
           description="Manage your customer invoices"
         />
-
+        
         <Card className="shadow-md backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-center mb-6">
