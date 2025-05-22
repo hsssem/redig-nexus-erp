@@ -13,6 +13,10 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Tasks from "./pages/Tasks";
 import Meetings from "./pages/Meetings";
+import Invoices from "./pages/Invoices";
+import Projects from "./pages/Projects";
+import Team from "./pages/Team";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +51,26 @@ const App = () => (
             <Route path="/meetings" element={
               <ProtectedRoute>
                 <Meetings />
+              </ProtectedRoute>
+            } />
+            <Route path="/invoices" element={
+              <ProtectedRoute>
+                <Invoices />
+              </ProtectedRoute>
+            } />
+            <Route path="/projects" element={
+              <ProtectedRoute>
+                <Projects />
+              </ProtectedRoute>
+            } />
+            <Route path="/team" element={
+              <ProtectedRoute>
+                <Team />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } />
             

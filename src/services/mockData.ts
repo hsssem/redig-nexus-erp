@@ -1,4 +1,3 @@
-
 // Customer Data Types
 export interface Customer {
   id: string;
@@ -66,7 +65,7 @@ export interface Project {
   name: string;
   description: string;
   client: string;
-  status: 'active' | 'completed' | 'on-hold';
+  status: 'active' | 'completed' | 'on-hold' | 'potential' | 'okGiven' | 'projectStarted' | 'betaVersion' | 'launchedAndVerified';
   startDate: string;
   endDate?: string;
   budget?: number;
@@ -388,11 +387,11 @@ export const projects: Project[] = [
     name: 'TechCorp Website Redesign',
     description: 'Complete overhaul of company website with new branding',
     client: 'TechCorp Inc.',
-    status: 'active',
+    status: 'launchedAndVerified',
     startDate: '2023-05-01',
     endDate: '2023-08-31',
     budget: 25000,
-    progress: 60,
+    progress: 100,
     manager: 'Charlie Martinez',
     team: ['Alice Cooper', 'Bob Thompson', 'Dana Johnson']
   },
@@ -401,7 +400,7 @@ export const projects: Project[] = [
     name: 'Innovate Co App Development',
     description: 'Mobile application development for client management',
     client: 'Innovate Co',
-    status: 'active',
+    status: 'projectStarted',
     startDate: '2023-04-15',
     budget: 50000,
     progress: 35,
@@ -413,11 +412,11 @@ export const projects: Project[] = [
     name: 'DataFlow Systems Integration',
     description: 'Integration of new data processing systems',
     client: 'DataFlow Systems',
-    status: 'on-hold',
+    status: 'betaVersion',
     startDate: '2023-03-01',
     endDate: '2023-09-30',
     budget: 75000,
-    progress: 25,
+    progress: 80,
     manager: 'Alice Cooper',
     team: ['Charlie Martinez', 'Dana Johnson', 'Evan Williams']
   },
@@ -439,13 +438,25 @@ export const projects: Project[] = [
     name: 'Global Technologies Training Program',
     description: 'Development of employee training materials',
     client: 'Global Technologies',
-    status: 'active',
+    status: 'okGiven',
     startDate: '2023-06-01',
     endDate: '2023-10-31',
     budget: 15000,
     progress: 10,
     manager: 'Dana Johnson',
     team: ['Alice Cooper', 'Grace Lee']
+  },
+  {
+    id: '6',
+    name: 'DataFlow Analytics Dashboard',
+    description: 'Business intelligence dashboard for real-time data',
+    client: 'DataFlow Systems',
+    status: 'potential',
+    startDate: '2023-09-01',
+    budget: 45000,
+    progress: 0,
+    manager: 'Bob Thompson',
+    team: ['Evan Williams', 'Charlie Martinez']
   }
 ];
 
@@ -564,6 +575,11 @@ export const statistics = {
   projectStatus: [
     { status: 'Active', count: projects.filter(p => p.status === 'active').length },
     { status: 'Completed', count: projects.filter(p => p.status === 'completed').length },
-    { status: 'On Hold', count: projects.filter(p => p.status === 'on-hold').length }
+    { status: 'On Hold', count: projects.filter(p => p.status === 'on-hold').length },
+    { status: 'Potential', count: projects.filter(p => p.status === 'potential').length },
+    { status: 'OK Given', count: projects.filter(p => p.status === 'okGiven').length },
+    { status: 'Project Started', count: projects.filter(p => p.status === 'projectStarted').length },
+    { status: 'Beta Version', count: projects.filter(p => p.status === 'betaVersion').length },
+    { status: 'Launched and Verified', count: projects.filter(p => p.status === 'launchedAndVerified').length }
   ]
 };
