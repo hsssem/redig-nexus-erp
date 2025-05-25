@@ -9,14 +9,20 @@ export const useTranslation = (text: string) => {
 
   useEffect(() => {
     const translateText = async () => {
-      if (currentLanguage === 'en') {
+      console.log('Translation hook triggered:', { text, currentLanguage });
+      
+      if (currentLanguage === 'en' || !text.trim()) {
+        console.log('Using original text (English or empty)');
         setTranslatedText(text);
         return;
       }
 
       setIsLoading(true);
+      console.log(`Starting translation from EN to ${currentLanguage}:`, text);
+      
       try {
         const translated = await translate(text);
+        console.log('Translation result:', translated);
         setTranslatedText(translated);
       } catch (error) {
         console.error('Translation failed:', error);

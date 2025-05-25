@@ -42,18 +42,20 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferred-language');
     if (savedLanguage && supportedLanguages.find(lang => lang.code === savedLanguage)) {
+      console.log('Loading saved language:', savedLanguage);
       setCurrentLanguage(savedLanguage);
     }
   }, []);
 
   const setLanguage = (language: string) => {
+    console.log('Setting language to:', language);
     setCurrentLanguage(language);
     localStorage.setItem('preferred-language', language);
     // Clear translations cache when language changes
     setTranslations({});
   };
 
-  // Free translation API using LibreTranslate (public instance)
+  // Translation function with better error handling and fallbacks
   const translate = async (text: string): Promise<string> => {
     if (currentLanguage === 'en' || !text.trim()) {
       return text;
@@ -62,10 +64,14 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     // Check if translation is cached
     const cacheKey = `${text}_${currentLanguage}`;
     if (translations[cacheKey]) {
+      console.log('Using cached translation:', translations[cacheKey]);
       return translations[cacheKey];
     }
 
+    console.log(`Translating "${text}" to ${currentLanguage}`);
+
     try {
+      // Try LibreTranslate first
       const response = await fetch('https://libretranslate.de/translate', {
         method: 'POST',
         headers: {
@@ -79,11 +85,15 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
         }),
       });
 
+      console.log('Translation API response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Translation failed');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Translation API response data:', data);
+      
       const translatedText = data.translatedText || text;
 
       // Cache the translation
@@ -94,8 +104,57 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
 
       return translatedText;
     } catch (error) {
-      console.error('Translation error:', error);
-      return text; // Fallback to original text
+      console.error('Translation API error:', error);
+      
+      // Fallback: return some basic translations for common words
+      const basicTranslations: Record<string, Record<string, string>> = {
+        'es': {
+          'Dashboard': 'Panel de Control',
+          'Customers': 'Clientes',
+          'Projects': 'Proyectos',
+          'Tasks': 'Tareas',
+          'Settings': 'Configuración',
+          'Meetings': 'Reuniones',
+          'Invoices': 'Facturas',
+          'Payments': 'Pagos',
+          'Team': 'Equipo',
+          'Today Overview': 'Resumen de Hoy',
+          'Leads': 'Prospectos',
+          'Trash': 'Papelera',
+          'ERP System': 'Sistema ERP',
+          'Digital Transformation': 'Transformación Digital'
+        },
+        'fr': {
+          'Dashboard': 'Tableau de Bord',
+          'Customers': 'Clients',
+          'Projects': 'Projets',
+          'Tasks': 'Tâches',
+          'Settings': 'Paramètres',
+          'Meetings': 'Réunions',
+          'Invoices': 'Factures',
+          'Payments': 'Paiements',
+          'Team': 'Équipe',
+          'Today Overview': 'Aperçu du Jour',
+          'Leads': 'Prospects',
+          'Trash': 'Corbeille',
+          'ERP System': 'Système ERP',
+          'Digital Transformation': 'Transformation Numérique'
+        }
+      };
+
+      const fallbackTranslation = basicTranslations[currentLanguage]?.[text];
+      if (fallbackTranslation) {
+        console.log('Using fallback translation:', fallbackTranslation);
+        // Cache the fallback translation
+        setTranslations(prev => ({
+          ...prev,
+          [cacheKey]: fallbackTranslation
+        }));
+        return fallbackTranslation;
+      }
+
+      // If no fallback available, return original text
+      return text;
     }
   };
 
