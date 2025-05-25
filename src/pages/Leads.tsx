@@ -190,7 +190,7 @@ const Leads = () => {
         const { error } = await supabase
           .from('leads')
           .insert({
-            user_id: user.username,
+            user_id: user.id,
             name: values.name,
             email: values.email,
             phone: values.phone,
@@ -272,7 +272,7 @@ const Leads = () => {
       const { error } = await supabase
         .from('clients')
         .insert({
-          user_id: user?.username,
+          user_id: user?.id,
           company_name: lead.name,
           notes: `Converted from lead. Original notes: ${lead.notes || ''}`,
           classification: 'Customer',
