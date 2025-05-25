@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -11,18 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from './MobileMenu';
-
-interface SidebarProps {
-  className?: string;
-}
-
-interface SidebarItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  isActive: boolean;
-  onClick?: () => void;
-}
+import LanguageSelector from '@/components/language/LanguageSelector';
+import TranslatedText from '@/components/language/TranslatedText';
 
 // Animated shapes for digital transformation theme
 const FloatingShapes = () => {
@@ -35,6 +24,14 @@ const FloatingShapes = () => {
       <div className="floating-shape-fast left-4 bottom-60 w-6 h-6 bg-darkyellow-300/15 rounded-full"></div>
     </>
   );
+};
+
+const SidebarItemProps = {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  onClick?: () => void;
 };
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon, label, isActive, onClick }) => {
@@ -50,10 +47,14 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon, label, isActive, on
       onClick={onClick}
     >
       {icon}
-      <span>{label}</span>
+      <TranslatedText text={label} />
     </Link>
   );
 };
+
+interface SidebarProps {
+  className?: string;
+}
 
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   const { user, logout } = useAuth();
@@ -86,10 +87,19 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <img src="https://redig-apps.com/assets/img/logos/logo_w.png" alt="Redig" className="h-8 w-auto" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-800">ERP System</h2>
-                <p className="text-xs text-gray-600">Digital Transformation</p>
+                <h2 className="text-lg font-bold text-gray-800">
+                  <TranslatedText text="ERP System" />
+                </h2>
+                <p className="text-xs text-gray-600">
+                  <TranslatedText text="Digital Transformation" />
+                </p>
               </div>
             </Link>
+          </div>
+          
+          {/* Language selector */}
+          <div className="px-4 py-2 border-b border-gray-200 relative z-10">
+            <LanguageSelector variant="button" />
           </div>
           
           {/* Navigation links */}
@@ -182,7 +192,9 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 </Avatar>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-600">{user.role}</p>
+                  <p className="text-xs text-gray-600">
+                    <TranslatedText text={user.role} />
+                  </p>
                 </div>
                 <Button 
                   variant="ghost" 

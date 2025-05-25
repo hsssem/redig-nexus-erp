@@ -18,6 +18,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import LanguageSelector from '@/components/language/LanguageSelector';
+import TranslatedText from '@/components/language/TranslatedText';
 
 interface MobileMenuItemProps {
   to: string;
@@ -40,7 +42,7 @@ const MobileMenuItem: React.FC<MobileMenuItemProps> = ({ to, icon, label, isActi
       onClick={onClick}
     >
       {icon}
-      <span>{label}</span>
+      <TranslatedText text={label} />
     </Link>
   );
 };
@@ -92,15 +94,22 @@ const MobileMenu: React.FC = () => {
               className="h-8 w-auto" 
             />
             <div>
-              <SheetTitle className="text-left text-gray-800">ERP System</SheetTitle>
+              <SheetTitle className="text-left text-gray-800">
+                <TranslatedText text="ERP System" />
+              </SheetTitle>
               <SheetDescription className="text-left text-gray-600">
-                Digital Transformation
+                <TranslatedText text="Digital Transformation" />
               </SheetDescription>
             </div>
           </div>
         </SheetHeader>
         
         <div className="flex flex-col h-full">
+          {/* Language selector */}
+          <div className="px-6 py-3 border-b border-gray-200">
+            <LanguageSelector variant="compact" />
+          </div>
+          
           {/* Navigation Menu */}
           <nav className="flex-1 overflow-auto py-4">
             <div className="space-y-1 px-4">
@@ -129,7 +138,9 @@ const MobileMenu: React.FC = () => {
                 </Avatar>
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                  <p className="text-xs text-gray-600">{user.role}</p>
+                  <p className="text-xs text-gray-600">
+                    <TranslatedText text={user.role} />
+                  </p>
                 </div>
               </div>
               <Button 
@@ -138,7 +149,7 @@ const MobileMenu: React.FC = () => {
                 className="w-full justify-start gap-2 border-gray-300 text-gray-700 hover:bg-gray-100"
               >
                 <LogOut size={16} />
-                Sign Out
+                <TranslatedText text="Sign Out" />
               </Button>
             </div>
           )}

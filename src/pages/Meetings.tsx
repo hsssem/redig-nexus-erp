@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Calendar, X, Clock, Check, AlertCircle } from 'lucide-react';
 import { meetings as initialMeetings, Meeting } from '@/services/mockData';
@@ -42,6 +41,8 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import TranslatedText from '@/components/language/TranslatedText';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Meetings = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,6 +58,10 @@ const Meetings = () => {
     location: '',
     status: 'scheduled'
   });
+
+  const { translatedText: searchPlaceholder } = useTranslation('Search meetings...');
+  const { translatedText: scheduleMeetingText } = useTranslation('Schedule Meeting');
+  const { translatedText: noMeetingsText } = useTranslation('No meetings found.');
 
   // Filter meetings based on search query
   const filteredMeetings = meetingsList.filter(
@@ -107,11 +112,17 @@ const Meetings = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'scheduled':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Scheduled</Badge>;
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          <TranslatedText text="Scheduled" />
+        </Badge>;
       case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Completed</Badge>;
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          <TranslatedText text="Completed" />
+        </Badge>;
       case 'canceled':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Canceled</Badge>;
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+          <TranslatedText text="Canceled" />
+        </Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -136,7 +147,7 @@ const Meetings = () => {
         title="Meetings"
         description="Schedule and manage your meetings"
         action={{
-          label: "Schedule Meeting",
+          label: scheduleMeetingText,
           onClick: () => setIsDialogOpen(true),
         }}
       >
@@ -145,7 +156,7 @@ const Meetings = () => {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search meetings..."
+              placeholder={searchPlaceholder}
               className="w-full md:w-[300px] pl-8"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -158,11 +169,21 @@ const Meetings = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[30px]">Status</TableHead>
-              <TableHead>Meeting</TableHead>
-              <TableHead className="hidden md:table-cell">Date & Time</TableHead>
-              <TableHead className="hidden md:table-cell">Attendees</TableHead>
-              <TableHead className="hidden lg:table-cell">Location</TableHead>
+              <TableHead className="w-[30px]">
+                <TranslatedText text="Status" />
+              </TableHead>
+              <TableHead>
+                <TranslatedText text="Meeting" />
+              </TableHead>
+              <TableHead className="hidden md:table-cell">
+                <TranslatedText text="Date & Time" />
+              </TableHead>
+              <TableHead className="hidden md:table-cell">
+                <TranslatedText text="Attendees" />
+              </TableHead>
+              <TableHead className="hidden lg:table-cell">
+                <TranslatedText text="Location" />
+              </TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -200,7 +221,7 @@ const Meetings = () => {
                     </div>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {meeting.location || 'Not specified'}
+                    {meeting.location || <TranslatedText text="Not specified" />}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -226,19 +247,23 @@ const Meetings = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit meeting</DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <TranslatedText text="View details" />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <TranslatedText text="Edit meeting" />
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(meeting.id, 'completed')}
                           disabled={meeting.status === 'completed'}
                         >
-                          Mark as completed
+                          <TranslatedText text="Mark as completed" />
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(meeting.id, 'canceled')}
                           disabled={meeting.status === 'canceled'}
                         >
-                          Cancel meeting
+                          <TranslatedText text="Cancel meeting" />
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -248,7 +273,7 @@ const Meetings = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
-                  No meetings found.
+                  {noMeetingsText}
                 </TableCell>
               </TableRow>
             )}
@@ -259,14 +284,18 @@ const Meetings = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Schedule New Meeting</DialogTitle>
+            <DialogTitle>
+              <TranslatedText text="Schedule New Meeting" />
+            </DialogTitle>
             <DialogDescription>
-              Fill in the details below to schedule a new meeting.
+              <TranslatedText text="Fill in the details below to schedule a new meeting." />
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Meeting Title</Label>
+              <Label htmlFor="title">
+                <TranslatedText text="Meeting Title" />
+              </Label>
               <Input
                 id="title"
                 value={newMeeting.title}
@@ -276,7 +305,9 @@ const Meetings = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="date">
+                  <TranslatedText text="Date" />
+                </Label>
                 <Input
                   id="date"
                   type="date"
@@ -285,7 +316,9 @@ const Meetings = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location">
+                  <TranslatedText text="Location" />
+                </Label>
                 <Input
                   id="location"
                   value={newMeeting.location}
@@ -296,7 +329,9 @@ const Meetings = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startTime">Start Time</Label>
+                <Label htmlFor="startTime">
+                  <TranslatedText text="Start Time" />
+                </Label>
                 <Input
                   id="startTime"
                   type="time"
@@ -305,7 +340,9 @@ const Meetings = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endTime">End Time</Label>
+                <Label htmlFor="endTime">
+                  <TranslatedText text="End Time" />
+                </Label>
                 <Input
                   id="endTime"
                   type="time"
@@ -315,7 +352,9 @@ const Meetings = () => {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="attendees">Attendees</Label>
+              <Label htmlFor="attendees">
+                <TranslatedText text="Attendees" />
+              </Label>
               <Input
                 id="attendees"
                 value={newMeeting.attendees?.join(', ') || ''}
@@ -327,7 +366,9 @@ const Meetings = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">
+                <TranslatedText text="Description" />
+              </Label>
               <Textarea
                 id="description"
                 value={newMeeting.description}
@@ -338,9 +379,11 @@ const Meetings = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              <TranslatedText text="Cancel" />
             </Button>
-            <Button onClick={handleCreateMeeting}>Schedule Meeting</Button>
+            <Button onClick={handleCreateMeeting}>
+              <TranslatedText text="Schedule Meeting" />
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
