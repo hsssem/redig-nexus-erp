@@ -65,6 +65,17 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     return location.pathname === path;
   };
 
+  // Get user display info from Supabase user object
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    return user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  };
+
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    return displayName.slice(0, 2).toUpperCase();
+  };
+
   return (
     <>
       {/* Mobile menu */}
@@ -186,15 +197,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
             <div className="border-t border-gray-200 p-4 relative z-10 bg-gray-50">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={user.avatar} />
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
                   <AvatarFallback className="bg-darkyellow-500 text-gray-900 font-semibold">
-                    {user.name.slice(0, 2).toUpperCase()}
+                    {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
                   <p className="text-xs text-gray-600">
-                    <TranslatedText text={user.role} />
+                    <TranslatedText text="User" />
                   </p>
                 </div>
                 <Button 

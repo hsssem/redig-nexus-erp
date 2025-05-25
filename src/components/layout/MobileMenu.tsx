@@ -73,6 +73,17 @@ const MobileMenu: React.FC = () => {
     { to: "/settings", icon: <Settings size={20} />, label: "Settings" },
   ];
 
+  // Get user display info from Supabase user object
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    return user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  };
+
+  const getUserInitials = () => {
+    const displayName = getUserDisplayName();
+    return displayName.slice(0, 2).toUpperCase();
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -131,15 +142,15 @@ const MobileMenu: React.FC = () => {
             <div className="border-t border-gray-200 p-4 bg-gray-50">
               <div className="flex items-center gap-3 mb-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={user.avatar} />
+                  <AvatarImage src={user.user_metadata?.avatar_url} />
                   <AvatarFallback className="bg-darkyellow-500 text-gray-900 font-semibold">
-                    {user.name.slice(0, 2).toUpperCase()}
+                    {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
                   <p className="text-xs text-gray-600">
-                    <TranslatedText text={user.role} />
+                    <TranslatedText text="User" />
                   </p>
                 </div>
               </div>

@@ -54,6 +54,13 @@ const Dashboard = () => {
   // Get type-checked activities
   const typeSafeActivities = getTypeCheckedActivities(stats.recentActivity);
 
+  // Get user display name from Supabase user object
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    const displayName = user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+    return displayName.split(' ')[0]; // Get first name
+  };
+
   const handleMonthChange = (monthIndex: string) => {
     setSelectedMonth(parseInt(monthIndex));
   };
@@ -61,7 +68,7 @@ const Dashboard = () => {
   return (
     <PageContainer>
       <PageHeader 
-        title={`Welcome back, ${user?.name?.split(' ')[0] || 'User'}`} 
+        title={`Welcome back, ${getUserDisplayName()}`} 
         description="Here's an overview of your business"
       >
         <div className="flex items-center gap-2">
