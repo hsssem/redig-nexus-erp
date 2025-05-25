@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { UserPlus, Plus, Trash2, RefreshCw, UserCheck } from 'lucide-react';
+import { UserPlus, Plus, Trash2, UserCheck, Edit } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -46,6 +46,8 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { format } from 'date-fns';
 import { Slider } from '@/components/ui/slider';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Lead schema
 const leadSchema = z.object({
@@ -54,14 +56,27 @@ const leadSchema = z.object({
   phone: z.string().optional(),
   source: z.string().min(1, { message: "Source is required" }),
   percentage: z.number().min(0).max(100),
-  estimatedBudget: z.number().min(0),
+  estimated_budget: z.number().min(0),
   notes: z.string().optional(),
-  positiveQualities: z.string().optional(),
-  negativeQualities: z.string().optional(),
-  createdAt: z.date().default(() => new Date()),
+  positive_qualities: z.string().optional(),
+  negative_qualities: z.string().optional(),
 });
 
-type Lead = z.infer<typeof leadSchema>;
+type Lead = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  source: string;
+  percentage: number;
+  estimated_budget: number;
+  notes?: string;
+  positive_qualities?: string;
+  negative_qualities?: string;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+};
 
 const leadSources = [
   "Website",
@@ -76,10 +91,13 @@ const leadSources = [
 const Leads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [open, setOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { addDeletedItem } = useAppSettings();
   const { toast } = useToast();
+  const { user } = useAuth();
   
-  const form = useForm<Lead>({
+  const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
       name: "",
@@ -87,72 +105,224 @@ const Leads = () => {
       phone: "",
       source: "",
       percentage: 10,
-      estimatedBudget: 0,
+      estimated_budget: 0,
       notes: "",
-      positiveQualities: "",
-      negativeQualities: "",
-      createdAt: new Date(),
+      positive_qualities: "",
+      negative_qualities: "",
     },
   });
 
-  // Mock data for demonstration - in real app, this would come from an API
+  // Fetch leads from Supabase
+  const fetchLeads = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching leads:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch leads",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setLeads(data || []);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch leads",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setLeads([
-      {
-        name: "ABC Corporation",
-        email: "contact@abc.com",
-        phone: "123-456-7890",
-        source: "Website",
-        percentage: 60,
-        estimatedBudget: 5000,
-        notes: "Interested in our services",
-        positiveQualities: "Good communication, quick responses",
-        negativeQualities: "Limited budget",
-        createdAt: new Date(),
-      },
-      {
-        name: "XYZ Inc",
-        email: "info@xyz.com",
-        phone: "987-654-3210",
-        source: "Referral",
-        percentage: 80,
-        estimatedBudget: 10000,
-        notes: "Referred by an existing client",
-        positiveQualities: "Clear requirements, established business",
-        negativeQualities: "Tight deadline",
-        createdAt: new Date(),
-      },
-    ]);
-  }, []);
+    fetchLeads();
+  }, [user]);
 
-  const onSubmit = (values: Lead) => {
-    setLeads(prev => [...prev, { ...values, createdAt: new Date() }]);
+  const onSubmit = async (values: z.infer<typeof leadSchema>) => {
+    if (!user) return;
+
+    try {
+      if (editingLead) {
+        // Update existing lead
+        const { error } = await supabase
+          .from('leads')
+          .update({
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            source: values.source,
+            percentage: values.percentage,
+            estimated_budget: values.estimated_budget,
+            notes: values.notes,
+            positive_qualities: values.positive_qualities,
+            negative_qualities: values.negative_qualities,
+          })
+          .eq('id', editingLead.id);
+
+        if (error) {
+          console.error('Error updating lead:', error);
+          toast({
+            title: "Error",
+            description: "Failed to update lead",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Lead Updated",
+          description: `${values.name} has been updated.`,
+        });
+      } else {
+        // Create new lead
+        const { error } = await supabase
+          .from('leads')
+          .insert({
+            user_id: user.username,
+            name: values.name,
+            email: values.email,
+            phone: values.phone,
+            source: values.source,
+            percentage: values.percentage,
+            estimated_budget: values.estimated_budget,
+            notes: values.notes,
+            positive_qualities: values.positive_qualities,
+            negative_qualities: values.negative_qualities,
+          });
+
+        if (error) {
+          console.error('Error creating lead:', error);
+          toast({
+            title: "Error",
+            description: "Failed to create lead",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Lead Added",
+          description: `${values.name} has been added as a lead.`,
+        });
+      }
+
+      setOpen(false);
+      setEditingLead(null);
+      form.reset();
+      fetchLeads();
+    } catch (error) {
+      console.error('Error submitting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save lead",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async (lead: Lead) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', lead.id);
+
+      if (error) {
+        console.error('Error deleting lead:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete lead",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      addDeletedItem('lead', lead.email, lead.name, lead);
+      toast({
+        title: "Lead Deleted",
+        description: `${lead.name} has been moved to trash.`,
+      });
+      
+      fetchLeads();
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete lead",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const convertToCustomer = async (lead: Lead) => {
+    try {
+      // In a real app, you would create a customer record in the clients table
+      const { error } = await supabase
+        .from('clients')
+        .insert({
+          user_id: user?.username,
+          company_name: lead.name,
+          notes: `Converted from lead. Original notes: ${lead.notes || ''}`,
+          classification: 'Customer',
+        });
+
+      if (error) {
+        console.error('Error converting lead to customer:', error);
+        toast({
+          title: "Error",
+          description: "Failed to convert lead to customer",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Remove from leads after successful conversion
+      await handleDelete(lead);
+      
+      toast({
+        title: "Lead Converted",
+        description: `${lead.name} has been converted to a customer.`,
+      });
+    } catch (error) {
+      console.error('Error converting lead:', error);
+      toast({
+        title: "Error",
+        description: "Failed to convert lead",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (lead: Lead) => {
+    setEditingLead(lead);
+    form.setValue('name', lead.name);
+    form.setValue('email', lead.email);
+    form.setValue('phone', lead.phone || '');
+    form.setValue('source', lead.source);
+    form.setValue('percentage', lead.percentage);
+    form.setValue('estimated_budget', lead.estimated_budget);
+    form.setValue('notes', lead.notes || '');
+    form.setValue('positive_qualities', lead.positive_qualities || '');
+    form.setValue('negative_qualities', lead.negative_qualities || '');
+    setOpen(true);
+  };
+
+  const handleDialogClose = () => {
     setOpen(false);
+    setEditingLead(null);
     form.reset();
-    toast({
-      title: "Lead Added",
-      description: `${values.name} has been added as a lead.`,
-    });
-  };
-
-  const handleDelete = (lead: Lead) => {
-    addDeletedItem('lead', lead.email, lead.name, lead);
-    setLeads(prev => prev.filter(l => l.email !== lead.email));
-    toast({
-      title: "Lead Deleted",
-      description: `${lead.name} has been moved to trash.`,
-    });
-  };
-
-  const convertToCustomer = (lead: Lead) => {
-    // In a real app, you would create a customer based on lead data
-    // and possibly connect to an API
-    toast({
-      title: "Lead Converted",
-      description: `${lead.name} has been converted to a customer.`,
-    });
-    // Remove from leads list
-    setLeads(prev => prev.filter(l => l.email !== lead.email));
   };
 
   const getProgressColor = (percentage: number) => {
@@ -160,6 +330,19 @@ const Leads = () => {
     if (percentage < 70) return "bg-amber-500";
     return "bg-green-500";
   };
+
+  if (!user) {
+    return (
+      <PageContainer>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <h3 className="mt-4 text-lg font-medium">Please log in</h3>
+            <p className="text-muted-foreground">You need to be logged in to view leads</p>
+          </CardContent>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -172,12 +355,12 @@ const Leads = () => {
         }}
       />
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Add New Lead</DialogTitle>
+            <DialogTitle>{editingLead ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
             <DialogDescription>
-              Enter the details of the potential customer.
+              {editingLead ? 'Update the lead information.' : 'Enter the details of the potential customer.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -234,7 +417,7 @@ const Leads = () => {
                       <FormLabel>Source</FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -265,7 +448,7 @@ const Leads = () => {
                           min={0}
                           max={100}
                           step={1}
-                          defaultValue={[field.value]}
+                          value={[field.value]}
                           onValueChange={(values) => field.onChange(values[0])}
                         />
                       </FormControl>
@@ -276,7 +459,7 @@ const Leads = () => {
 
                 <FormField
                   control={form.control}
-                  name="estimatedBudget"
+                  name="estimated_budget"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Estimated Budget</FormLabel>
@@ -310,7 +493,7 @@ const Leads = () => {
 
               <FormField
                 control={form.control}
-                name="positiveQualities"
+                name="positive_qualities"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Positive Qualities</FormLabel>
@@ -324,7 +507,7 @@ const Leads = () => {
 
               <FormField
                 control={form.control}
-                name="negativeQualities"
+                name="negative_qualities"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Negative Qualities</FormLabel>
@@ -337,14 +520,22 @@ const Leads = () => {
               />
 
               <div className="flex justify-end">
-                <Button type="submit">Add Lead</Button>
+                <Button type="submit">
+                  {editingLead ? 'Update Lead' : 'Add Lead'}
+                </Button>
               </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
 
-      {leads.length === 0 ? (
+      {isLoading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-muted-foreground">Loading leads...</div>
+          </CardContent>
+        </Card>
+      ) : leads.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <UserPlus className="h-16 w-16 text-muted-foreground opacity-20" />
@@ -366,12 +557,12 @@ const Leads = () => {
                 <TableHead>Probability</TableHead>
                 <TableHead>Budget</TableHead>
                 <TableHead>Created</TableHead>
-                <TableHead className="w-[160px]">Actions</TableHead>
+                <TableHead className="w-[200px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {leads.map((lead) => (
-                <TableRow key={lead.email}>
+                <TableRow key={lead.id}>
                   <TableCell className="font-medium">{lead.name}</TableCell>
                   <TableCell>
                     <div>{lead.email}</div>
@@ -386,10 +577,19 @@ const Leads = () => {
                       <div className="min-w-[32px] text-right">{lead.percentage}%</div>
                     </div>
                   </TableCell>
-                  <TableCell>${lead.estimatedBudget}</TableCell>
-                  <TableCell>{format(new Date(lead.createdAt), 'PP')}</TableCell>
+                  <TableCell>${lead.estimated_budget}</TableCell>
+                  <TableCell>{format(new Date(lead.created_at), 'PP')}</TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-1"
+                        onClick={() => handleEdit(lead)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        <span className="hidden sm:inline">Edit</span>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

@@ -19,7 +19,7 @@ export type Database = {
           manager: string | null
           notes: string | null
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           classification?: string | null
@@ -30,7 +30,7 @@ export type Database = {
           manager?: string | null
           notes?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Update: {
           classification?: string | null
@@ -41,7 +41,7 @@ export type Database = {
           manager?: string | null
           notes?: string | null
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -57,6 +57,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           updated_at: string | null
+          user_id: string
           whatsapp: string | null
         }
         Insert: {
@@ -70,6 +71,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           updated_at?: string | null
+          user_id: string
           whatsapp?: string | null
         }
         Update: {
@@ -83,6 +85,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           updated_at?: string | null
+          user_id?: string
           whatsapp?: string | null
         }
         Relationships: [
@@ -107,6 +110,7 @@ export type Database = {
           subject: string
           submitted_by: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           assigned_to?: string | null
@@ -119,6 +123,7 @@ export type Database = {
           subject: string
           submitted_by?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           assigned_to?: string | null
@@ -131,8 +136,50 @@ export type Database = {
           subject?: string
           submitted_by?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number
+          total: number
+          unit_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number
+          total?: number
+          unit_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invoices: {
         Row: {
@@ -148,6 +195,7 @@ export type Database = {
           tax: number
           total: number
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -162,6 +210,7 @@ export type Database = {
           tax: number
           total: number
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -176,6 +225,7 @@ export type Database = {
           tax?: number
           total?: number
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -186,6 +236,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          estimated_budget: number
+          id: string
+          name: string
+          negative_qualities: string | null
+          notes: string | null
+          percentage: number
+          phone: string | null
+          positive_qualities: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          estimated_budget?: number
+          id?: string
+          name: string
+          negative_qualities?: string | null
+          notes?: string | null
+          percentage?: number
+          phone?: string | null
+          positive_qualities?: string | null
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          estimated_budget?: number
+          id?: string
+          name?: string
+          negative_qualities?: string | null
+          notes?: string | null
+          percentage?: number
+          phone?: string | null
+          positive_qualities?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       meetings: {
         Row: {
@@ -198,6 +296,7 @@ export type Database = {
           status: string | null
           subject: string
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -209,6 +308,7 @@ export type Database = {
           status?: string | null
           subject: string
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -220,6 +320,7 @@ export type Database = {
           status?: string | null
           subject?: string
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -243,6 +344,7 @@ export type Database = {
           notes: string | null
           status: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           budget?: number | null
@@ -255,6 +357,7 @@ export type Database = {
           notes?: string | null
           status?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           budget?: number | null
@@ -267,6 +370,7 @@ export type Database = {
           notes?: string | null
           status?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -288,6 +392,7 @@ export type Database = {
           project_id: string | null
           status: string | null
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           assigned_to?: string | null
@@ -298,6 +403,7 @@ export type Database = {
           project_id?: string | null
           status?: string | null
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           assigned_to?: string | null
@@ -308,6 +414,7 @@ export type Database = {
           project_id?: string | null
           status?: string | null
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
