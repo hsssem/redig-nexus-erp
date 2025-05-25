@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +6,7 @@ import { format } from 'date-fns';
 import { invoices } from '@/services/mockData';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface PublicInvoiceViewProps {
   invoiceId?: string;
@@ -59,7 +58,7 @@ const PublicInvoiceView: React.FC<PublicInvoiceViewProps> = ({ invoiceId }) => {
     doc.text('Project: ' + invoice.project, 20, 90);
     
     // Items table
-    doc.autoTable({
+    autoTable(doc, {
       startY: 100,
       head: [['Description', 'Quantity', 'Unit Price', 'Total']],
       body: invoice.items.map((item: any) => [
