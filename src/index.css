@@ -123,18 +123,36 @@
   }
   
   .floating-shape-slow {
-    animation: float 10s ease-in-out infinite;
+    animation: float 12s ease-in-out infinite;
   }
   
   @keyframes float {
     0% {
       transform: translateY(0px) rotate(0deg);
     }
-    50% {
-      transform: translateY(-20px) rotate(5deg);
+    33% {
+      transform: translateY(-15px) rotate(3deg);
+    }
+    66% {
+      transform: translateY(-25px) rotate(-3deg);
     }
     100% {
       transform: translateY(0px) rotate(0deg);
+    }
+  }
+  
+  /* Enhanced mobile responsiveness */
+  @media (max-width: 768px) {
+    .mobile-padding {
+      @apply px-4 py-2;
+    }
+    
+    .mobile-text {
+      @apply text-sm;
+    }
+    
+    .mobile-button {
+      @apply h-12 text-base;
     }
   }
 }
