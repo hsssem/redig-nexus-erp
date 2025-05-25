@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -26,13 +27,13 @@ const FloatingShapes = () => {
   );
 };
 
-const SidebarItemProps = {
+interface SidebarItemProps {
   to: string;
   icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick?: () => void;
-};
+}
 
 const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon, label, isActive, onClick }) => {
   return (
