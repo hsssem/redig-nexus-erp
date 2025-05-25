@@ -3,12 +3,12 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
-import { useAppSettings } from '@/contexts/AppSettingsContext';
+import { useUserSettings } from '@/hooks/useUserSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 // Form schema for general settings
 const generalSettingsSchema = z.object({
@@ -53,23 +54,15 @@ const currencies = [
 ];
 
 const Settings = () => {
-  const { 
-    currencySymbol, 
-    setCurrencySymbol, 
-    currencyCode, 
-    setCurrencyCode,
-    taxConfig,
-    setTaxConfig 
-  } = useAppSettings();
-  
+  const { settings, loading, saveSettings } = useUserSettings();
   const { toast } = useToast();
   
   // Form for general settings
   const generalForm = useForm<z.infer<typeof generalSettingsSchema>>({
     resolver: zodResolver(generalSettingsSchema),
     defaultValues: {
-      currencySymbol,
-      currencyCode,
+      currencySymbol: settings.currency_symbol,
+      currencyCode: settings.currency_code,
     }
   });
   
@@ -77,33 +70,55 @@ const Settings = () => {
   const taxForm = useForm<z.infer<typeof taxSettingsSchema>>({
     resolver: zodResolver(taxSettingsSchema),
     defaultValues: {
-      enabled: taxConfig.enabled,
-      rate: taxConfig.rate,
-      name: taxConfig.name,
+      enabled: settings.tax_enabled,
+      rate: settings.tax_rate,
+      name: settings.tax_name,
     }
   });
+
+  // Update form values when settings are loaded
+  React.useEffect(() => {
+    if (!loading) {
+      generalForm.reset({
+        currencySymbol: settings.currency_symbol,
+        currencyCode: settings.currency_code,
+      });
+      
+      taxForm.reset({
+        enabled: settings.tax_enabled,
+        rate: settings.tax_rate,
+        name: settings.tax_name,
+      });
+    }
+  }, [settings, loading, generalForm, taxForm]);
   
-  const onSubmitGeneralSettings = (values: z.infer<typeof generalSettingsSchema>) => {
-    setCurrencySymbol(values.currencySymbol);
-    setCurrencyCode(values.currencyCode);
-    
-    toast({
-      title: "Settings updated",
-      description: "Your general settings have been saved.",
+  const onSubmitGeneralSettings = async (values: z.infer<typeof generalSettingsSchema>) => {
+    const success = await saveSettings({
+      currency_symbol: values.currencySymbol,
+      currency_code: values.currencyCode,
     });
+    
+    if (success) {
+      toast({
+        title: "Settings updated",
+        description: "Your general settings have been saved to the database.",
+      });
+    }
   };
   
-  const onSubmitTaxSettings = (values: z.infer<typeof taxSettingsSchema>) => {
-    setTaxConfig({
-      enabled: values.enabled,
-      rate: values.rate,
-      name: values.name,
+  const onSubmitTaxSettings = async (values: z.infer<typeof taxSettingsSchema>) => {
+    const success = await saveSettings({
+      tax_enabled: values.enabled,
+      tax_rate: values.rate,
+      tax_name: values.name,
     });
     
-    toast({
-      title: "Tax settings updated",
-      description: "Your tax configuration has been saved.",
-    });
+    if (success) {
+      toast({
+        title: "Tax settings updated",
+        description: "Your tax configuration has been saved to the database.",
+      });
+    }
   };
   
   const handleCurrencyChange = (currencyCode: string) => {
@@ -114,11 +129,26 @@ const Settings = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <PageContainer>
+        <PageHeader 
+          title="Settings" 
+          description="Manage your application settings"
+        />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading settings...</span>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <PageHeader 
         title="Settings" 
-        description="Manage your application settings"
+        description="Manage your application settings (saved to database)"
       />
       
       <div className="grid grid-cols-1 gap-6">
@@ -127,7 +157,7 @@ const Settings = () => {
           <CardHeader>
             <CardTitle>General Settings</CardTitle>
             <CardDescription>
-              Configure global application settings
+              Configure global application settings - saved to your database
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -197,7 +227,7 @@ const Settings = () => {
           <CardHeader>
             <CardTitle>Tax Configuration</CardTitle>
             <CardDescription>
-              Set up how tax is calculated on invoices
+              Set up how tax is calculated on invoices - saved to your database
             </CardDescription>
           </CardHeader>
           <CardContent>

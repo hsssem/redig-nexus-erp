@@ -426,6 +426,42 @@ export type Database = {
           },
         ]
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          currency_code: string
+          currency_symbol: string
+          id: string
+          tax_enabled: boolean
+          tax_name: string
+          tax_rate: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency_code?: string
+          currency_symbol?: string
+          id?: string
+          tax_enabled?: boolean
+          tax_name?: string
+          tax_rate?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency_code?: string
+          currency_symbol?: string
+          id?: string
+          tax_enabled?: boolean
+          tax_name?: string
+          tax_rate?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
