@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 interface StatsCardProps {
   title: string;
@@ -9,9 +10,16 @@ interface StatsCardProps {
   description?: string;
   icon?: React.ReactNode;
   className?: string;
+  isMonetary?: boolean;
 }
 
-const StatsCard = ({ title, value, description, icon, className }: StatsCardProps) => {
+const StatsCard = ({ title, value, description, icon, className, isMonetary = false }: StatsCardProps) => {
+  const { currencySymbol } = useAppSettings();
+  
+  const displayValue = isMonetary && typeof value === 'number' 
+    ? `${currencySymbol}${value.toLocaleString()}` 
+    : value;
+
   return (
     <Card className={cn(
       "backdrop-blur-sm transition-all duration-300 hover:shadow-lg border-t-4 border-t-darkblue-500", 
@@ -25,7 +33,7 @@ const StatsCard = ({ title, value, description, icon, className }: StatsCardProp
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold bg-gradient-to-r from-darkblue-600 to-darkblue-400 bg-clip-text text-transparent">
-          {value}
+          {displayValue}
         </div>
         {description && (
           <p className="text-xs text-muted-foreground mt-1">{description}</p>

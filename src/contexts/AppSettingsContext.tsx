@@ -1,5 +1,6 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 interface TaxConfig {
   enabled: boolean;
@@ -24,6 +25,7 @@ interface AppSettingsContextType {
   addDeletedItem: (type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment', id: string, name: string, data: any) => void;
   clearTrash: () => void;
   restoreItem: (id: string) => any;
+  loading: boolean;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType>({
@@ -41,6 +43,7 @@ const AppSettingsContext = createContext<AppSettingsContextType>({
   addDeletedItem: () => {},
   clearTrash: () => {},
   restoreItem: () => {},
+  loading: true,
 });
 
 interface AppSettingsProviderProps {
@@ -48,12 +51,16 @@ interface AppSettingsProviderProps {
 }
 
 export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ children }) => {
-  const [currencySymbol, setCurrencySymbol] = useState('$');
-  const [currencyCode, setCurrencyCode] = useState('USD');
+  const { settings, loading: dbLoading } = useUserSettings();
+  const [loading, setLoading] = useState(true);
+  
+  // Sync with database settings
+  const [currencySymbol, setCurrencySymbol] = useState(settings.currency_symbol);
+  const [currencyCode, setCurrencyCode] = useState(settings.currency_code);
   const [taxConfig, setTaxConfig] = useState<TaxConfig>({
-    enabled: false,
-    rate: 19,
-    name: 'VAT'
+    enabled: settings.tax_enabled,
+    rate: settings.tax_rate,
+    name: settings.tax_name
   });
   
   const [deletedItems, setDeletedItems] = useState<{
@@ -63,6 +70,20 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
     deletedAt: Date;
     data: any;
   }[]>([]);
+
+  // Update local state when database settings change
+  useEffect(() => {
+    if (!dbLoading) {
+      setCurrencySymbol(settings.currency_symbol);
+      setCurrencyCode(settings.currency_code);
+      setTaxConfig({
+        enabled: settings.tax_enabled,
+        rate: settings.tax_rate,
+        name: settings.tax_name
+      });
+      setLoading(false);
+    }
+  }, [settings, dbLoading]);
   
   // Add item to trash
   const addDeletedItem = (
@@ -110,6 +131,7 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
       addDeletedItem,
       clearTrash,
       restoreItem,
+      loading,
     }}>
       {children}
     </AppSettingsContext.Provider>

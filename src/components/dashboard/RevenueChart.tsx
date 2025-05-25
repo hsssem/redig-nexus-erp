@@ -16,6 +16,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 interface RevenueChartProps {
   data: {
@@ -26,6 +27,7 @@ interface RevenueChartProps {
 }
 
 const RevenueChart: React.FC<RevenueChartProps> = ({ data, showAnalysis = false }) => {
+  const { currencySymbol } = useAppSettings();
   const currentMonth = new Date().getMonth();
   const totalRevenue = data.reduce((sum, item) => sum + item.revenue, 0);
   const maxRevenueMonth = data.reduce((max, item) => 
@@ -46,7 +48,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data, showAnalysis = false 
         <CardDescription>
           {showAnalysis ? (
             <span className="text-muted-foreground">
-              Total revenue: ${totalRevenue.toLocaleString()}, with {maxRevenueMonth.month} being the best month at ${maxRevenueMonth.revenue.toLocaleString()}
+              Total revenue: {currencySymbol}{totalRevenue.toLocaleString()}, with {maxRevenueMonth.month} being the best month at {currencySymbol}{maxRevenueMonth.revenue.toLocaleString()}
             </span>
           ) : (
             <span className="text-muted-foreground">
@@ -72,9 +74,9 @@ const RevenueChart: React.FC<RevenueChartProps> = ({ data, showAnalysis = false 
             >
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis dataKey="month" />
-              <YAxis tickFormatter={(value) => `$${value}`} />
+              <YAxis tickFormatter={(value) => `${currencySymbol}${value}`} />
               <Tooltip 
-                formatter={(value) => [`$${value.toLocaleString()}`, 'Revenue']}
+                formatter={(value) => [`${currencySymbol}${value.toLocaleString()}`, 'Revenue']}
                 labelFormatter={(label) => `Month: ${label}`}
               />
               <Bar 

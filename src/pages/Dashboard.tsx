@@ -8,6 +8,7 @@ import RevenueChart from '@/components/dashboard/RevenueChart';
 import StatusDonutChart from '@/components/dashboard/StatusDonutChart';
 import { invoices, calculateStatistics } from '@/services/mockData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { Users, FileText, BriefcaseBusiness, CheckSquare, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +43,7 @@ const MONTHS = [
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { currencySymbol, loading: settingsLoading } = useAppSettings();
   const currentMonth = new Date().getMonth();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [stats, setStats] = useState(calculateStatistics(currentMonth));
@@ -64,6 +66,17 @@ const Dashboard = () => {
   const handleMonthChange = (monthIndex: string) => {
     setSelectedMonth(parseInt(monthIndex));
   };
+
+  if (settingsLoading) {
+    return (
+      <PageContainer>
+        <PageHeader 
+          title="Loading..." 
+          description="Loading your dashboard"
+        />
+      </PageContainer>
+    );
+  }
   
   return (
     <PageContainer>
@@ -102,10 +115,11 @@ const Dashboard = () => {
         />
         <StatsCard
           title={`Revenue (${MONTHS[selectedMonth]})`}
-          value={`$${stats.monthlyRevenue.toLocaleString()}`}
+          value={stats.monthlyRevenue}
           icon={<TrendingUp className="h-6 w-6 text-darkblue-500" />}
           description={`${stats.thisMonthProjects} projects`}
           className="gradient-card"
+          isMonetary={true}
         />
         <StatsCard
           title="Active Projects"
@@ -186,7 +200,7 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/30">
                     <h3 className="font-medium mb-2">Revenue by Month</h3>
-                    <p className="text-muted-foreground mb-3">Based on your data, May has been your highest revenue month ($21,000).</p>
+                    <p className="text-muted-foreground mb-3">Based on your data, May has been your highest revenue month ({currencySymbol}21,000).</p>
                     <div className="h-64">
                       <RevenueChart data={stats.monthlyRevenueData} showAnalysis={true} />
                     </div>
@@ -201,15 +215,15 @@ const Dashboard = () => {
                     <div className="mt-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span>Alice Cooper</span>
-                        <span className="font-medium">$40,000</span>
+                        <span className="font-medium">{currencySymbol}40,000</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Bob Thompson</span>
-                        <span className="font-medium">$35,000</span>
+                        <span className="font-medium">{currencySymbol}35,000</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Evan Williams</span>
-                        <span className="font-medium">$30,000</span>
+                        <span className="font-medium">{currencySymbol}30,000</span>
                       </div>
                     </div>
                   </div>
@@ -219,19 +233,19 @@ const Dashboard = () => {
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/30">
                     <h3 className="font-medium">Top Clients by Revenue</h3>
-                    <p className="text-muted-foreground mb-3">DataFlow Systems is your highest-value client with projects totaling $120,000.</p>
+                    <p className="text-muted-foreground mb-3">DataFlow Systems is your highest-value client with projects totaling {currencySymbol}120,000.</p>
                     <div className="mt-4 space-y-2">
                       <div className="flex justify-between items-center">
                         <span>DataFlow Systems</span>
-                        <span className="font-medium">$120,000</span>
+                        <span className="font-medium">{currencySymbol}120,000</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>Innovate Co</span>
-                        <span className="font-medium">$50,000</span>
+                        <span className="font-medium">{currencySymbol}50,000</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span>TechCorp Inc.</span>
-                        <span className="font-medium">$25,000</span>
+                        <span className="font-medium">{currencySymbol}25,000</span>
                       </div>
                     </div>
                   </div>
