@@ -21,8 +21,8 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Return null - AppLayout handles the GridNavigation rendering
-  return null;
+  // Return empty fragment - AppLayout handles everything for "/"
+  return <></>;
 };
 
 export default Index;
