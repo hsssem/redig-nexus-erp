@@ -2,7 +2,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import GridNavigation from '@/components/layout/GridNavigation';
 
 const Index = () => {
   const { user, loading } = useAuth();
@@ -22,7 +21,8 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <GridNavigation />;
+  // Return null here because AppLayout will handle rendering GridNavigation for "/"
+  return null;
 };
 
 export default Index;
