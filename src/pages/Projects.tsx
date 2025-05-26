@@ -64,7 +64,18 @@ const Projects = () => {
   });
 
   const handleCreateProject = async (data: FormValues) => {
-    const success = await createProject(data);
+    // Convert form data to the expected type for createProject
+    const projectData = {
+      name: data.name,
+      status: data.status,
+      client_id: data.client_id || null,
+      manager: data.manager || null,
+      budget: data.budget || null,
+      duration_days: data.duration_days || null,
+      notes: data.notes || null,
+    };
+    
+    const success = await createProject(projectData);
     if (success) {
       setIsCreateDialogOpen(false);
       form.reset();
