@@ -1,0 +1,32 @@
+
+import React from 'react';
+import { useLocation } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import GridNavigation from './GridNavigation';
+
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
+
+const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const location = useLocation();
+  
+  // Show grid navigation only on specific routes
+  const showGridNavigation = location.pathname === '/grid-menu' || location.pathname === '/';
+  
+  if (showGridNavigation) {
+    return <GridNavigation />;
+  }
+
+  // For all other routes, show the regular sidebar layout
+  return (
+    <div className="min-h-screen flex w-full">
+      <Sidebar />
+      <main className="flex-1 lg:ml-64">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+export default AppLayout;

@@ -25,6 +25,7 @@ import Leads from './pages/Leads';
 import Payments from './pages/Payments';
 import TodayOverview from './pages/TodayOverview';
 import PublicInvoiceView from './components/invoices/PublicInvoiceView';
+import AppLayout from './components/layout/AppLayout';
 
 const queryClient = new QueryClient();
 
@@ -36,122 +37,124 @@ function App() {
           <Router>
             <AuthProvider>
               <AppSettingsProvider>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/" element={<Index />} />
-                  <Route
-                    path="/today"
-                    element={
-                      <ProtectedRoute>
-                        <TodayOverview />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/leads"
-                    element={
-                      <ProtectedRoute>
-                        <Leads />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/tasks"
-                    element={
-                      <ProtectedRoute>
-                        <Tasks />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/meetings"
-                    element={
-                      <ProtectedRoute>
-                        <Meetings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/customers"
-                    element={
-                      <ProtectedRoute>
-                        <Customers />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/invoices"
-                    element={
-                      <ProtectedRoute>
-                        <Invoices />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/invoice/:id"
-                    element={
-                      <InvoicePublicView />
-                    }
-                  />
-                  <Route
-                    path="/projects"
-                    element={
-                      <ProtectedRoute>
-                        <Projects />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/payments"
-                    element={
-                      <ProtectedRoute>
-                        <Payments />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/team"
-                    element={
-                      <ProtectedRoute>
-                        <Team />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/analytics"
-                    element={
-                      <ProtectedRoute>
-                        <Analytics />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/trash"
-                    element={
-                      <ProtectedRoute>
-                        <Trash />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="/404" element={<NotFound />} />
-                  <Route path="*" element={<Navigate to="/404" replace />} />
-                </Routes>
+                <AppLayout>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<Index />} />
+                    <Route
+                      path="/today"
+                      element={
+                        <ProtectedRoute>
+                          <TodayOverview />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/leads"
+                      element={
+                        <ProtectedRoute>
+                          <Leads />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tasks"
+                      element={
+                        <ProtectedRoute>
+                          <Tasks />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/meetings"
+                      element={
+                        <ProtectedRoute>
+                          <Meetings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/customers"
+                      element={
+                        <ProtectedRoute>
+                          <Customers />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/invoices"
+                      element={
+                        <ProtectedRoute>
+                          <Invoices />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/invoice/:id"
+                      element={
+                        <InvoicePublicView />
+                      }
+                    />
+                    <Route
+                      path="/projects"
+                      element={
+                        <ProtectedRoute>
+                          <Projects />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/payments"
+                      element={
+                        <ProtectedRoute>
+                          <Payments />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/team"
+                      element={
+                        <ProtectedRoute>
+                          <Team />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute>
+                          <Analytics />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/trash"
+                      element={
+                        <ProtectedRoute>
+                          <Trash />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/404" element={<NotFound />} />
+                    <Route path="*" element={<Navigate to="/404" replace />} />
+                  </Routes>
+                </AppLayout>
                 <Toaster position="top-right" />
               </AppSettingsProvider>
             </AuthProvider>
