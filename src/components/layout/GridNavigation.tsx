@@ -111,22 +111,10 @@ const GridNavigation: React.FC = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-darkyellow-400 to-darkyellow-600 p-3 rounded-2xl shadow-xl transform hover:scale-105 transition-transform duration-300">
-                <img src="https://redig-apps.com/assets/img/logos/logo_w.png" alt="Redig" className="h-8 w-auto" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-                  <TranslatedText text="ERP System" />
-                </h1>
-                <p className="text-sm text-gray-600 font-medium">
-                  <TranslatedText text="Digital Transformation Platform" />
-                </p>
-              </div>
+              <LanguageSelector variant="button" />
             </div>
 
             <div className="flex items-center gap-4">
-              <LanguageSelector variant="button" />
-              
               {user && (
                 <div className="flex items-center gap-3 bg-white/50 backdrop-blur-sm rounded-full px-4 py-2 shadow-lg border border-gray-200/50">
                   <Avatar className="h-10 w-10 ring-2 ring-darkyellow-500/30 shadow-lg">
@@ -158,9 +146,24 @@ const GridNavigation: React.FC = () => {
 
       {/* Main Content */}
       <div className="relative z-10 container mx-auto px-6 py-8">
+        {/* Logo Section */}
+        <div className="mb-12 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="bg-gradient-to-br from-darkyellow-400 to-darkyellow-600 p-6 rounded-3xl shadow-2xl transform hover:scale-105 transition-transform duration-300">
+              <img src="https://redig-apps.com/assets/img/logos/logo_w.png" alt="Redig" className="h-16 w-auto" />
+            </div>
+          </div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2">
+            <TranslatedText text="ERP System" />
+          </h1>
+          <p className="text-lg text-gray-600 font-medium">
+            <TranslatedText text="Digital Transformation Platform" />
+          </p>
+        </div>
+
         {/* Today Overview Section */}
         <div className="mb-12">
-          <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center justify-center gap-2">
             <Home className="text-darkyellow-500" size={24} />
             <TranslatedText text="Today Overview" />
           </h2>
@@ -169,7 +172,7 @@ const GridNavigation: React.FC = () => {
 
         {/* Navigation Grid */}
         <div className="mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">
             <TranslatedText text="Quick Access" />
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
