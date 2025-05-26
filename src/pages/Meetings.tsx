@@ -77,11 +77,13 @@ const Meetings = () => {
       return;
     }
 
+    const participantsArray = typeof newMeeting.participants === 'string' 
+      ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
+      : newMeeting.participants || [];
+
     const success = await createMeeting({
       ...newMeeting,
-      participants: typeof newMeeting.participants === 'string' 
-        ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
-        : newMeeting.participants || []
+      participants: participantsArray
     });
 
     if (success) {
@@ -102,11 +104,13 @@ const Meetings = () => {
   const handleUpdateMeeting = async () => {
     if (!editingMeeting) return;
 
+    const participantsArray = typeof newMeeting.participants === 'string' 
+      ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
+      : newMeeting.participants || [];
+
     const success = await updateMeeting(editingMeeting.id, {
       ...newMeeting,
-      participants: typeof newMeeting.participants === 'string' 
-        ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
-        : newMeeting.participants || []
+      participants: participantsArray
     });
 
     if (success) {

@@ -55,7 +55,13 @@ export const useInvoices = () => {
         return;
       }
 
-      setInvoices(data || []);
+      // Transform and type-cast the data
+      const transformedInvoices = (data || []).map(invoice => ({
+        ...invoice,
+        status: invoice.status as 'draft' | 'sent' | 'paid' | 'overdue'
+      }));
+
+      setInvoices(transformedInvoices);
     } catch (error) {
       console.error('Error fetching invoices:', error);
     } finally {

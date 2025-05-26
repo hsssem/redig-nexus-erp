@@ -46,7 +46,14 @@ export const useMeetings = () => {
         return;
       }
 
-      setMeetings(data || []);
+      // Transform and type-cast the data
+      const transformedMeetings = (data || []).map(meeting => ({
+        ...meeting,
+        status: meeting.status as 'scheduled' | 'completed' | 'canceled',
+        participants: meeting.participants || []
+      }));
+
+      setMeetings(transformedMeetings);
     } catch (error) {
       console.error('Error fetching meetings:', error);
     } finally {
@@ -58,11 +65,15 @@ export const useMeetings = () => {
     if (!user) return false;
 
     try {
+      // Combine date and start time for datetime field
+      const datetime = `${meetingData.meeting_date}T${meetingData.start_time}:00`;
+      
       const { error } = await supabase
         .from('meetings')
         .insert({
           user_id: user.id,
           subject: meetingData.subject,
+          datetime: datetime,
           meeting_date: meetingData.meeting_date,
           start_time: meetingData.start_time,
           end_time: meetingData.end_time,
@@ -97,9 +108,16 @@ export const useMeetings = () => {
 
   const updateMeeting = async (id: string, meetingData: Partial<Meeting>) => {
     try {
+      const updateData: any = { ...meetingData };
+      
+      // If we're updating date/time, also update the datetime field
+      if (meetingData.meeting_date && meetingData.start_time) {
+        updateData.datetime = `${meetingData.meeting_date}T${meetingData.start_time}:00`;
+      }
+
       const { error } = await supabase
         .from('meetings')
-        .update(meetingData)
+        .update(updateData)
         .eq('id', id);
 
       if (error) {
