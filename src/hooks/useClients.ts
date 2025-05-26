@@ -51,14 +51,18 @@ export const useClients = () => {
   };
 
   const createClient = async (clientData: Partial<Client>) => {
-    if (!user) return false;
+    if (!user || !clientData.company_name) return false;
 
     try {
       const { error } = await supabase
         .from('clients')
         .insert({
           user_id: user.id,
-          ...clientData,
+          company_name: clientData.company_name,
+          manager: clientData.manager,
+          industry: clientData.industry,
+          classification: clientData.classification,
+          notes: clientData.notes,
         });
 
       if (error) {
