@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,7 +45,15 @@ export const useTeams = () => {
         return;
       }
 
-      setTeams(data || []);
+      // Type the data properly to match our TeamMember interface
+      const typedData: TeamMember[] = (data || []).map(item => ({
+        ...item,
+        status: item.status as 'active' | 'inactive' | 'on-leave',
+        phone: item.phone || undefined,
+        avatar_url: item.avatar_url || undefined
+      }));
+
+      setTeams(typedData);
     } catch (error) {
       console.error('Error fetching teams:', error);
       toast.error('Failed to load team members');
