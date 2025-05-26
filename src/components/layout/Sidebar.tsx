@@ -45,6 +45,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+  console.log('Sidebar component rendering');
+  
   const { user, logout } = useAuth();
   const location = useLocation();
   
@@ -64,10 +66,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
 
   return (
     <>
-      {/* Mobile menu */}
+      {/* Mobile menu - Only render on mobile */}
       <MobileMenu />
       
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar - Single instance only */}
       <div 
         className={cn(
           "hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg",
