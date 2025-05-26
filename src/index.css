@@ -84,6 +84,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Enable hardware acceleration globally */
+  * {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
 }
 
 @layer utilities {
@@ -112,9 +119,60 @@
     @apply border border-opacity-20 rounded-lg overflow-hidden backdrop-blur-sm;
   }
   
-  /* Animated floating shapes */
+  /* Enhanced 3D effects and premium animations */
+  .glass-morphism {
+    @apply bg-white/20 backdrop-blur-md border border-white/30;
+  }
+  
+  .premium-shadow {
+    box-shadow: 
+      0 4px 20px rgba(0, 0, 0, 0.08),
+      0 1px 3px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+  
+  .premium-shadow-hover {
+    box-shadow: 
+      0 20px 40px rgba(0, 0, 0, 0.12),
+      0 8px 16px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  
+  .transform-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+  }
+  
+  /* Premium button effects */
+  .btn-3d {
+    @apply relative transform-gpu transition-all duration-200;
+    box-shadow: 
+      0 4px 8px rgba(0, 0, 0, 0.1),
+      0 1px 3px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  
+  .btn-3d:hover {
+    @apply -translate-y-1;
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.15),
+      0 4px 8px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  
+  .btn-3d:active {
+    @apply translate-y-0;
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      0 1px 2px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Floating shapes with enhanced animations */
   .floating-shape {
-    @apply absolute opacity-20 pointer-events-none;
+    @apply absolute opacity-20 pointer-events-none transform-gpu;
     animation: float 8s ease-in-out infinite;
   }
   
@@ -128,17 +186,33 @@
   
   @keyframes float {
     0% {
-      transform: translateY(0px) rotate(0deg);
+      transform: translateY(0px) rotate(0deg) scale(1);
     }
     33% {
-      transform: translateY(-15px) rotate(3deg);
+      transform: translateY(-15px) rotate(3deg) scale(1.05);
     }
     66% {
-      transform: translateY(-25px) rotate(-3deg);
+      transform: translateY(-25px) rotate(-3deg) scale(0.95);
     }
     100% {
-      transform: translateY(0px) rotate(0deg);
+      transform: translateY(0px) rotate(0deg) scale(1);
     }
+  }
+  
+  /* Premium pulse animation */
+  @keyframes premium-pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.02);
+    }
+  }
+  
+  .premium-pulse {
+    animation: premium-pulse 3s ease-in-out infinite;
   }
   
   /* Enhanced mobile responsiveness */
@@ -154,5 +228,27 @@
     .mobile-button {
       @apply h-12 text-base;
     }
+    
+    /* Reduce 3D effects on mobile for performance */
+    .transform-gpu {
+      transform: none;
+      backface-visibility: visible;
+      perspective: none;
+    }
+  }
+  
+  /* Custom gradient backgrounds */
+  .bg-premium-gradient {
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.9) 0%, 
+      rgba(248, 250, 252, 0.8) 50%, 
+      rgba(241, 245, 249, 0.9) 100%);
+  }
+  
+  .bg-premium-dark-gradient {
+    background: linear-gradient(135deg, 
+      rgba(51, 65, 85, 0.9) 0%, 
+      rgba(30, 41, 59, 0.8) 50%, 
+      rgba(15, 23, 42, 0.9) 100%);
   }
 }

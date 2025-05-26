@@ -9,8 +9,11 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-darkyellow-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-darkyellow-500"></div>
+          <p className="text-gray-600 font-medium">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -19,7 +22,6 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Show the grid navigation as the main dashboard
   return <GridNavigation />;
 };
 
