@@ -81,8 +81,8 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
     addToTrash(item);
   };
 
-  const getTableNameForType = (type: string): string => {
-    const tableMap: Record<string, string> = {
+  const getTableNameForType = (type: string): keyof typeof supabase.from => {
+    const tableMap: Record<string, keyof typeof supabase.from> = {
       'customer': 'clients',
       'task': 'tasks',
       'meeting': 'meetings',
@@ -92,7 +92,7 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
       'lead': 'leads',
       'payment': 'payments'
     };
-    return tableMap[type] || type;
+    return tableMap[type] || 'clients'; // fallback to clients if type not found
   };
 
   const restoreItem = async (id: string): Promise<boolean> => {
