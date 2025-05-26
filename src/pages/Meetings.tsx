@@ -1,6 +1,6 @@
+
 import React, { useState } from 'react';
-import { Search, Plus, Calendar, X, Clock, Check, AlertCircle } from 'lucide-react';
-import { meetings as initialMeetings, Meeting } from '@/services/mockData';
+import { Search, Clock, Check, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 import PageContainer from '@/components/layout/PageContainer';
@@ -22,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -31,82 +30,126 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import TranslatedText from '@/components/language/TranslatedText';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useMeetings, Meeting } from '@/hooks/useMeetings';
+import { useToast } from '@/hooks/use-toast';
 
 const Meetings = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [meetingsList, setMeetingsList] = useState<Meeting[]>(initialMeetings);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [newMeeting, setNewMeeting] = useState<Partial<Meeting>>({
-    title: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    attendees: [],
-    description: '',
+    subject: '',
+    meeting_date: '',
+    start_time: '',
+    end_time: '',
+    participants: [],
+    notes: '',
     location: '',
     status: 'scheduled'
   });
+
+  const { meetings, loading, createMeeting, updateMeeting, deleteMeeting } = useMeetings();
+  const { toast } = useToast();
 
   const { translatedText: searchPlaceholder } = useTranslation('Search meetings...');
   const { translatedText: scheduleMeetingText } = useTranslation('Schedule Meeting');
   const { translatedText: noMeetingsText } = useTranslation('No meetings found.');
 
   // Filter meetings based on search query
-  const filteredMeetings = meetingsList.filter(
+  const filteredMeetings = meetings.filter(
     (meeting) =>
-      meeting.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (meeting.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+      meeting.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (meeting.notes?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleCreateMeeting = () => {
+  const handleCreateMeeting = async () => {
     // Basic validation
-    if (!newMeeting.title || !newMeeting.date || !newMeeting.startTime || !newMeeting.endTime || !newMeeting.attendees?.length) {
-      toast.error('Please fill in all required fields');
+    if (!newMeeting.subject || !newMeeting.meeting_date || !newMeeting.start_time || !newMeeting.end_time) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
       return;
     }
 
-    // Create new meeting
-    const meeting: Meeting = {
-      ...newMeeting as Meeting,
-      id: (meetingsList.length + 1).toString(),
-      status: newMeeting.status as 'scheduled' | 'completed' | 'canceled',
-      attendees: newMeeting.attendees || [],
-    };
+    const success = await createMeeting({
+      ...newMeeting,
+      participants: typeof newMeeting.participants === 'string' 
+        ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
+        : newMeeting.participants || []
+    });
 
-    setMeetingsList([meeting, ...meetingsList]);
+    if (success) {
+      setNewMeeting({
+        subject: '',
+        meeting_date: '',
+        start_time: '',
+        end_time: '',
+        participants: [],
+        notes: '',
+        location: '',
+        status: 'scheduled'
+      });
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleUpdateMeeting = async () => {
+    if (!editingMeeting) return;
+
+    const success = await updateMeeting(editingMeeting.id, {
+      ...newMeeting,
+      participants: typeof newMeeting.participants === 'string' 
+        ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
+        : newMeeting.participants || []
+    });
+
+    if (success) {
+      setEditingMeeting(null);
+      setIsDialogOpen(false);
+      resetForm();
+    }
+  };
+
+  const handleStatusChange = async (meetingId: string, newStatus: 'scheduled' | 'completed' | 'canceled') => {
+    await updateMeeting(meetingId, { status: newStatus });
+  };
+
+  const handleDeleteMeeting = async (id: string) => {
+    await deleteMeeting(id);
+  };
+
+  const openEditDialog = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
     setNewMeeting({
-      title: '',
-      date: '',
-      startTime: '',
-      endTime: '',
-      attendees: [],
-      description: '',
+      subject: meeting.subject,
+      meeting_date: meeting.meeting_date,
+      start_time: meeting.start_time,
+      end_time: meeting.end_time,
+      participants: meeting.participants,
+      notes: meeting.notes || '',
+      location: meeting.location || '',
+      status: meeting.status
+    });
+    setIsDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setNewMeeting({
+      subject: '',
+      meeting_date: '',
+      start_time: '',
+      end_time: '',
+      participants: [],
+      notes: '',
       location: '',
       status: 'scheduled'
     });
-    setIsDialogOpen(false);
-    toast.success('Meeting created successfully');
-  };
-
-  const handleStatusChange = (meetingId: string, newStatus: 'scheduled' | 'completed' | 'canceled') => {
-    setMeetingsList(
-      meetingsList.map((meeting) =>
-        meeting.id === meetingId ? { ...meeting, status: newStatus } : meeting
-      )
-    );
-    toast.success(`Meeting status changed to ${newStatus}`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -141,6 +184,16 @@ const Meetings = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">Loading meetings...</div>
+        </div>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
       <PageHeader
@@ -148,7 +201,11 @@ const Meetings = () => {
         description="Schedule and manage your meetings"
         action={{
           label: scheduleMeetingText,
-          onClick: () => setIsDialogOpen(true),
+          onClick: () => {
+            resetForm();
+            setEditingMeeting(null);
+            setIsDialogOpen(true);
+          },
         }}
       >
         <div className="flex items-center gap-2">
@@ -179,7 +236,7 @@ const Meetings = () => {
                 <TranslatedText text="Date & Time" />
               </TableHead>
               <TableHead className="hidden md:table-cell">
-                <TranslatedText text="Attendees" />
+                <TranslatedText text="Participants" />
               </TableHead>
               <TableHead className="hidden lg:table-cell">
                 <TranslatedText text="Location" />
@@ -196,27 +253,27 @@ const Meetings = () => {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{meeting.title}</div>
+                      <div className="font-medium">{meeting.subject}</div>
                       <div className="text-sm text-muted-foreground hidden sm:block">
-                        {meeting.description && meeting.description.length > 60
-                          ? `${meeting.description.substring(0, 60)}...`
-                          : meeting.description}
+                        {meeting.notes && meeting.notes.length > 60
+                          ? `${meeting.notes.substring(0, 60)}...`
+                          : meeting.notes}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <div>{format(new Date(meeting.date), 'MMM d, yyyy')}</div>
+                    <div>{format(new Date(meeting.meeting_date), 'MMM d, yyyy')}</div>
                     <div className="text-sm text-muted-foreground">
-                      {meeting.startTime} - {meeting.endTime}
+                      {meeting.start_time} - {meeting.end_time}
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
-                      {meeting.attendees.slice(0, 2).map((attendee, idx) => (
-                        <span key={idx} className="text-sm">{attendee}{idx < Math.min(1, meeting.attendees.length - 1) ? ', ' : ''}</span>
+                      {meeting.participants.slice(0, 2).map((participant, idx) => (
+                        <span key={idx} className="text-sm">{participant}{idx < Math.min(1, meeting.participants.length - 1) ? ', ' : ''}</span>
                       ))}
-                      {meeting.attendees.length > 2 && (
-                        <span className="text-sm text-muted-foreground">+{meeting.attendees.length - 2} more</span>
+                      {meeting.participants.length > 2 && (
+                        <span className="text-sm text-muted-foreground">+{meeting.participants.length - 2} more</span>
                       )}
                     </div>
                   </TableCell>
@@ -247,10 +304,7 @@ const Meetings = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <TranslatedText text="View details" />
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(meeting)}>
                           <TranslatedText text="Edit meeting" />
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -264,6 +318,12 @@ const Meetings = () => {
                           disabled={meeting.status === 'canceled'}
                         >
                           <TranslatedText text="Cancel meeting" />
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteMeeting(meeting.id)}
+                          className="text-red-600"
+                        >
+                          <TranslatedText text="Delete meeting" />
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -285,7 +345,7 @@ const Meetings = () => {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              <TranslatedText text="Schedule New Meeting" />
+              <TranslatedText text={editingMeeting ? "Edit Meeting" : "Schedule New Meeting"} />
             </DialogTitle>
             <DialogDescription>
               <TranslatedText text="Fill in the details below to schedule a new meeting." />
@@ -293,26 +353,26 @@ const Meetings = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">
-                <TranslatedText text="Meeting Title" />
+              <Label htmlFor="subject">
+                <TranslatedText text="Meeting Subject" />
               </Label>
               <Input
-                id="title"
-                value={newMeeting.title}
-                onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
-                placeholder="Enter meeting title"
+                id="subject"
+                value={newMeeting.subject}
+                onChange={(e) => setNewMeeting({ ...newMeeting, subject: e.target.value })}
+                placeholder="Enter meeting subject"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">
+                <Label htmlFor="meeting_date">
                   <TranslatedText text="Date" />
                 </Label>
                 <Input
-                  id="date"
+                  id="meeting_date"
                   type="date"
-                  value={newMeeting.date}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, date: e.target.value })}
+                  value={newMeeting.meeting_date}
+                  onChange={(e) => setNewMeeting({ ...newMeeting, meeting_date: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
@@ -329,51 +389,51 @@ const Meetings = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="startTime">
+                <Label htmlFor="start_time">
                   <TranslatedText text="Start Time" />
                 </Label>
                 <Input
-                  id="startTime"
+                  id="start_time"
                   type="time"
-                  value={newMeeting.startTime}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, startTime: e.target.value })}
+                  value={newMeeting.start_time}
+                  onChange={(e) => setNewMeeting({ ...newMeeting, start_time: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endTime">
+                <Label htmlFor="end_time">
                   <TranslatedText text="End Time" />
                 </Label>
                 <Input
-                  id="endTime"
+                  id="end_time"
                   type="time"
-                  value={newMeeting.endTime}
-                  onChange={(e) => setNewMeeting({ ...newMeeting, endTime: e.target.value })}
+                  value={newMeeting.end_time}
+                  onChange={(e) => setNewMeeting({ ...newMeeting, end_time: e.target.value })}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="attendees">
-                <TranslatedText text="Attendees" />
+              <Label htmlFor="participants">
+                <TranslatedText text="Participants" />
               </Label>
               <Input
-                id="attendees"
-                value={newMeeting.attendees?.join(', ') || ''}
+                id="participants"
+                value={Array.isArray(newMeeting.participants) ? newMeeting.participants.join(', ') : newMeeting.participants || ''}
                 onChange={(e) => setNewMeeting({ 
                   ...newMeeting, 
-                  attendees: e.target.value.split(',').map(a => a.trim()).filter(Boolean) 
+                  participants: e.target.value
                 })}
-                placeholder="Enter attendees separated by commas"
+                placeholder="Enter participants separated by commas"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">
-                <TranslatedText text="Description" />
+              <Label htmlFor="notes">
+                <TranslatedText text="Notes" />
               </Label>
               <Textarea
-                id="description"
-                value={newMeeting.description}
-                onChange={(e) => setNewMeeting({ ...newMeeting, description: e.target.value })}
-                placeholder="Meeting description"
+                id="notes"
+                value={newMeeting.notes}
+                onChange={(e) => setNewMeeting({ ...newMeeting, notes: e.target.value })}
+                placeholder="Meeting notes"
               />
             </div>
           </div>
@@ -381,8 +441,8 @@ const Meetings = () => {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               <TranslatedText text="Cancel" />
             </Button>
-            <Button onClick={handleCreateMeeting}>
-              <TranslatedText text="Schedule Meeting" />
+            <Button onClick={editingMeeting ? handleUpdateMeeting : handleCreateMeeting}>
+              <TranslatedText text={editingMeeting ? "Update Meeting" : "Schedule Meeting"} />
             </Button>
           </DialogFooter>
         </DialogContent>

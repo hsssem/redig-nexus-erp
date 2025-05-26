@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -25,7 +24,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useToast } from '@/hooks/use-toast';
 import {
   Table,
   TableBody,
@@ -43,22 +41,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { format } from 'date-fns';
-import { invoices } from '@/services/mockData';
 import { Badge } from '@/components/ui/badge';
+import { usePayments } from '@/hooks/usePayments';
+import { useInvoices } from '@/hooks/useInvoices';
 
 // Payment schema
 const paymentSchema = z.object({
-  id: z.string().optional(),
-  invoiceId: z.string(),
-  projectId: z.string(),
+  invoice_id: z.string().optional(),
+  project_id: z.string().optional(),
   amount: z.number().min(0.01, { message: "Amount must be greater than 0" }),
-  date: z.string(),
+  payment_date: z.string(),
   method: z.string(),
   reference: z.string().optional(),
   notes: z.string().optional(),
 });
 
-type Payment = z.infer<typeof paymentSchema>;
+type PaymentFormData = z.infer<typeof paymentSchema>;
 
 const paymentMethods = [
   "Credit Card",
@@ -69,104 +67,65 @@ const paymentMethods = [
   "Other"
 ];
 
-// Mock data for projects
-const projects = [
-  { id: "p1", name: "Website Redesign", client: "ABC Corp" },
-  { id: "p2", name: "Mobile App Development", client: "XYZ Inc" },
-  { id: "p3", name: "Marketing Campaign", client: "123 Industries" }
-];
-
 const Payments = () => {
-  const [payments, setPayments] = useState<Payment[]>([]);
   const [open, setOpen] = useState(false);
   const { addDeletedItem, currencySymbol } = useAppSettings();
-  const { toast } = useToast();
+  const { payments, loading, createPayment, deletePayment } = usePayments();
+  const { invoices } = useInvoices();
   
-  const form = useForm<Payment>({
+  const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      invoiceId: "",
-      projectId: "",
+      invoice_id: "",
+      project_id: "",
       amount: 0,
-      date: format(new Date(), 'yyyy-MM-dd'),
+      payment_date: format(new Date(), 'yyyy-MM-dd'),
       method: "",
       reference: "",
       notes: "",
     },
   });
 
-  // Mock data for demonstration - in real app, this would come from an API
-  useEffect(() => {
-    setPayments([
-      {
-        id: "pay1",
-        invoiceId: "inv1",
-        projectId: "p1",
-        amount: 2500,
-        date: "2023-05-01",
-        method: "Bank Transfer",
-        reference: "TRF12345",
-        notes: "50% upfront payment",
-      },
-      {
-        id: "pay2",
-        invoiceId: "inv2",
-        projectId: "p2",
-        amount: 3000,
-        date: "2023-05-15",
-        method: "Credit Card",
-        reference: "CC98765",
-        notes: "Final payment",
-      },
-    ]);
-  }, []);
-
-  const onSubmit = (values: Payment) => {
-    const newPayment = {
-      ...values,
-      id: `pay${Date.now().toString().slice(-4)}`,
-    };
-    setPayments(prev => [...prev, newPayment]);
-    setOpen(false);
-    form.reset();
-    toast({
-      title: "Payment Recorded",
-      description: `Payment of ${currencySymbol}${values.amount} has been recorded.`,
-    });
+  const onSubmit = async (values: PaymentFormData) => {
+    const success = await createPayment(values);
+    if (success) {
+      setOpen(false);
+      form.reset();
+    }
   };
 
-  const handleDelete = (payment: Payment) => {
-    addDeletedItem(
-      'payment', 
-      payment.id!, 
-      `Payment for ${payment.amount}`, 
-      payment
+  const handleDelete = async (paymentId: string) => {
+    const payment = payments.find(p => p.id === paymentId);
+    if (payment) {
+      const success = await deletePayment(paymentId);
+      if (success) {
+        addDeletedItem(
+          'payment', 
+          payment.id, 
+          `Payment for ${payment.amount}`, 
+          payment
+        );
+      }
+    }
+  };
+
+  const totalPayments = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const monthlyPayments = payments.filter(p => {
+    const paymentDate = new Date(p.payment_date);
+    const today = new Date();
+    return paymentDate.getMonth() === today.getMonth() && 
+          paymentDate.getFullYear() === today.getFullYear();
+  }).reduce((sum, payment) => sum + Number(payment.amount), 0);
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">Loading payments...</div>
+        </div>
+      </PageContainer>
     );
-    setPayments(prev => prev.filter(p => p.id !== payment.id));
-    toast({
-      title: "Payment Deleted",
-      description: `Payment has been moved to trash.`,
-    });
-  };
-
-  // Get invoice details for a payment
-  const getInvoiceDetails = (invoiceId: string) => {
-    const invoice = invoices.find(inv => inv.id === invoiceId);
-    return invoice || { customer: "Unknown", project: "Unknown", total: 0 };
-  };
-
-  // Get project name for a payment
-  const getProjectName = (projectId: string) => {
-    const project = projects.find(proj => proj.id === projectId);
-    return project?.name || "Unknown Project";
-  };
-
-  const getInvoicesForProject = (projectId: string) => {
-    return invoices.filter(inv => inv.project === projectId);
-  };
-
-  // Watch for project change to update invoice dropdown
-  const watchedProjectId = form.watch("projectId");
+  }
 
   return (
     <PageContainer>
@@ -192,67 +151,6 @@ const Payments = () => {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="projectId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Project</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Clear invoice selection when project changes
-                        form.setValue("invoiceId", "");
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select project" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {projects.map(project => (
-                          <SelectItem key={project.id} value={project.id}>
-                            {project.name} - {project.client}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="invoiceId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Invoice</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={!watchedProjectId}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder={watchedProjectId ? "Select invoice" : "Select a project first"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {watchedProjectId && getInvoicesForProject(watchedProjectId).map(invoice => (
-                          <SelectItem key={invoice.id} value={invoice.id}>
-                            {invoice.id} - ${invoice.total}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
@@ -274,7 +172,7 @@ const Payments = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="date"
+                  name="payment_date"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Payment Date</FormLabel>
@@ -358,7 +256,7 @@ const Payments = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {currencySymbol}{payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString()}
+              {currencySymbol}{totalPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -368,12 +266,7 @@ const Payments = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {currencySymbol}{payments.filter(p => {
-                const paymentDate = new Date(p.date);
-                const today = new Date();
-                return paymentDate.getMonth() === today.getMonth() && 
-                      paymentDate.getFullYear() === today.getFullYear();
-              }).reduce((sum, payment) => sum + payment.amount, 0).toLocaleString()}
+              {currencySymbol}{monthlyPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -404,50 +297,35 @@ const Payments = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Invoice</TableHead>
-                <TableHead>Project</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Method</TableHead>
                 <TableHead>Reference</TableHead>
+                <TableHead>Notes</TableHead>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {payments.map((payment) => {
-                const invoiceDetails = getInvoiceDetails(payment.invoiceId);
-                return (
-                  <TableRow key={payment.id}>
-                    <TableCell>{format(new Date(payment.date), 'PP')}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span>{payment.invoiceId}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <BriefcaseBusiness className="h-4 w-4 text-muted-foreground" />
-                        <span>{getProjectName(payment.projectId)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{currencySymbol}{payment.amount.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{payment.method}</Badge>
-                    </TableCell>
-                    <TableCell>{payment.reference || "-"}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(payment)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {payments.map((payment) => (
+                <TableRow key={payment.id}>
+                  <TableCell>{format(new Date(payment.payment_date), 'PP')}</TableCell>
+                  <TableCell className="font-medium">{currencySymbol}{Number(payment.amount).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{payment.method}</Badge>
+                  </TableCell>
+                  <TableCell>{payment.reference || "-"}</TableCell>
+                  <TableCell>{payment.notes || "-"}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => handleDelete(payment.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
