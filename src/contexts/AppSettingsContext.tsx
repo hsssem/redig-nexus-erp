@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUserSettings } from '@/hooks/useUserSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DeletedItem {
   id: string;
@@ -20,7 +22,7 @@ interface TaxConfig {
 interface AppSettingsContextType {
   deletedItems: DeletedItem[];
   addToTrash: (item: DeletedItem) => void;
-  restoreItem: (id: string) => DeletedItem | null;
+  restoreItem: (id: string) => Promise<boolean>;
   clearTrash: () => void;
   permanentlyDelete: (id: string) => void;
   currencySymbol: string;
@@ -47,6 +49,7 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
   const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
   const { toast } = useToast();
   const { settings, loading: settingsLoading } = useUserSettings();
+  const { user } = useAuth();
 
   // Load deleted items from localStorage on component mount
   useEffect(() => {
@@ -78,13 +81,89 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
     addToTrash(item);
   };
 
-  const restoreItem = (id: string): DeletedItem | null => {
-    const itemToRestore = deletedItems.find(item => item.id === id);
-    if (itemToRestore) {
-      setDeletedItems(prev => prev.filter(item => item.id !== id));
-      return itemToRestore;
+  const getTableNameForType = (type: string): string => {
+    const tableMap: Record<string, string> = {
+      'customer': 'clients',
+      'task': 'tasks',
+      'meeting': 'meetings',
+      'invoice': 'invoices',
+      'project': 'projects',
+      'team': 'teams',
+      'lead': 'leads',
+      'payment': 'payments'
+    };
+    return tableMap[type] || type;
+  };
+
+  const restoreItem = async (id: string): Promise<boolean> => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to restore items",
+        variant: "destructive",
+      });
+      return false;
     }
-    return null;
+
+    const itemToRestore = deletedItems.find(item => item.id === id);
+    if (!itemToRestore) {
+      toast({
+        title: "Error",
+        description: "Item not found in trash",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      const tableName = getTableNameForType(itemToRestore.type);
+      const { data: itemData } = itemToRestore;
+
+      // Prepare the data for restoration, ensuring user_id is set
+      const restoreData = {
+        ...itemData,
+        user_id: user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Remove fields that shouldn't be included in the insert
+      delete restoreData.id; // Let database generate new ID
+
+      console.log(`Restoring ${itemToRestore.type} to table ${tableName}:`, restoreData);
+
+      const { error } = await supabase
+        .from(tableName)
+        .insert(restoreData);
+
+      if (error) {
+        console.error(`Error restoring ${itemToRestore.type}:`, error);
+        toast({
+          title: "Error",
+          description: `Failed to restore ${itemToRestore.type}`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Remove from trash after successful restoration
+      setDeletedItems(prev => prev.filter(item => item.id !== id));
+      
+      toast({
+        title: "Item Restored",
+        description: `${itemToRestore.type} "${itemToRestore.name}" has been restored successfully.`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error(`Error restoring ${itemToRestore.type}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to restore ${itemToRestore.type}`,
+        variant: "destructive",
+      });
+      return false;
+    }
   };
 
   const clearTrash = () => {

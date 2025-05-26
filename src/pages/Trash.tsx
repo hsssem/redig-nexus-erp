@@ -45,13 +45,13 @@ const Trash = () => {
     return labels[type as keyof typeof labels] || type;
   };
 
-  const handleRestore = (id: string, name: string, type: string) => {
-    const restoredItem = restoreItem(id);
-    if (restoredItem) {
-      toast({
-        title: "Item Restored",
-        description: `${getItemTypeLabel(type)} "${name}" has been restored.`,
-      });
+  const handleRestore = async (id: string, name: string, type: string) => {
+    console.log(`Attempting to restore ${type} with ID: ${id}`);
+    const success = await restoreItem(id);
+    if (success) {
+      console.log(`Successfully restored ${type}: ${name}`);
+    } else {
+      console.error(`Failed to restore ${type}: ${name}`);
     }
   };
 
