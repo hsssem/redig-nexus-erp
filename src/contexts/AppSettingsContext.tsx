@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useUserSettings } from '@/hooks/useUserSettings';
@@ -81,8 +80,8 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
     addToTrash(item);
   };
 
-  const getTableNameForType = (type: string): keyof typeof supabase.from => {
-    const tableMap: Record<string, keyof typeof supabase.from> = {
+  const getTableNameForType = (type: string): string => {
+    const tableMap: Record<string, string> = {
       'customer': 'clients',
       'task': 'tasks',
       'meeting': 'meetings',
@@ -133,7 +132,7 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
       console.log(`Restoring ${itemToRestore.type} to table ${tableName}:`, restoreData);
 
       const { error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .insert(restoreData);
 
       if (error) {
