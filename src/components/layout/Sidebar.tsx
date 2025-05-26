@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       {/* Mobile menu */}
       <MobileMenu />
       
-      {/* Desktop sidebar - ONLY this navigation should be visible */}
+      {/* Desktop sidebar */}
       <div 
         className={cn(
           "hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg",

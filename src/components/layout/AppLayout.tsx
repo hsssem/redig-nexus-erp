@@ -11,12 +11,12 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const location = useLocation();
   
-  // Show grid navigation only on home route
+  // Show grid navigation ONLY on home route
   if (location.pathname === '/') {
     return <GridNavigation />;
   }
   
-  // For all other routes, show the regular sidebar layout with NO other navigation
+  // For all other routes, show ONLY the sidebar layout
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
       <Sidebar />
