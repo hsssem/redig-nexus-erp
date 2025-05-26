@@ -16,12 +16,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     return <GridNavigation />;
   }
   
-  // For all other routes, show the regular sidebar layout
+  // For all other routes, show the regular sidebar layout with NO other navigation
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full bg-gray-50">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 p-6">
-        {children}
+      <main className="flex-1 lg:ml-64 p-6 overflow-auto">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );

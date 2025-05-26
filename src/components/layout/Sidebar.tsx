@@ -6,26 +6,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   Home, Users, BriefcaseBusiness, Calendar, FileText, 
   Settings, Menu, X, LogOut, PieChart, UserCircle, CheckSquare,
-  Trash2, DollarSign, UserPlus
+  Trash2, DollarSign, UserPlus, Grid3X3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from './MobileMenu';
 import LanguageSelector from '@/components/language/LanguageSelector';
 import TranslatedText from '@/components/language/TranslatedText';
-
-// Animated shapes for digital transformation theme
-const FloatingShapes = () => {
-  return (
-    <>
-      <div className="floating-shape left-10 top-20 w-12 h-12 bg-darkyellow-400/20 rounded-full"></div>
-      <div className="floating-shape-fast right-12 top-40 w-8 h-8 bg-darkyellow-300/15 rounded-md rotate-45"></div>
-      <div className="floating-shape-slow left-24 bottom-40 w-16 h-16 bg-darkyellow-500/10 rounded-lg"></div>
-      <div className="floating-shape right-8 bottom-20 w-10 h-10 bg-darkyellow-400/20 rounded-full"></div>
-      <div className="floating-shape-fast left-4 bottom-60 w-6 h-6 bg-darkyellow-300/15 rounded-full"></div>
-    </>
-  );
-};
 
 interface SidebarItemProps {
   to: string;
@@ -65,7 +52,6 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
     return location.pathname === path;
   };
 
-  // Get user display info from Supabase user object
   const getUserDisplayName = () => {
     if (!user) return '';
     return user.user_metadata?.name || user.email?.split('@')[0] || 'User';
@@ -81,21 +67,18 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       {/* Mobile menu */}
       <MobileMenu />
       
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar - ONLY this navigation should be visible */}
       <div 
         className={cn(
           "hidden lg:flex fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 shadow-lg",
           className
         )}
       >
-        <div className="flex h-full flex-col relative overflow-hidden">
-          {/* Floating animated shapes */}
-          <FloatingShapes />
-          
+        <div className="flex h-full flex-col w-full">
           {/* Sidebar header */}
-          <div className="flex items-center justify-center px-4 py-6 relative z-10 border-b border-gray-200">
+          <div className="flex items-center px-4 py-6 border-b border-gray-200">
             <Link to="/" className="flex items-center gap-3">
-              <div className="bg-gray-50 p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-darkyellow-400 to-darkyellow-600 p-2 rounded-lg shadow-lg">
                 <img src="https://redig-apps.com/assets/img/logos/logo_w.png" alt="Redig" className="h-8 w-auto" />
               </div>
               <div>
@@ -103,20 +86,26 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   <TranslatedText text="ERP System" />
                 </h2>
                 <p className="text-xs text-gray-600">
-                  <TranslatedText text="Digital Transformation" />
+                  <TranslatedText text="Digital Platform" />
                 </p>
               </div>
             </Link>
           </div>
           
           {/* Language selector */}
-          <div className="px-4 py-2 border-b border-gray-200 relative z-10">
+          <div className="px-4 py-3 border-b border-gray-200">
             <LanguageSelector variant="button" />
           </div>
           
           {/* Navigation links */}
-          <div className="flex-1 overflow-auto py-4 px-4 relative z-10">
+          <div className="flex-1 overflow-auto py-4 px-4">
             <nav className="flex flex-col gap-1">
+              <SidebarItem 
+                to="/"
+                icon={<Grid3X3 size={20} />}
+                label="Grid Menu"
+                isActive={isActive("/")}
+              />
               <SidebarItem 
                 to="/today"
                 icon={<Home size={20} />}
@@ -124,10 +113,10 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 isActive={isActive("/today")}
               />
               <SidebarItem 
-                to="/"
+                to="/dashboard"
                 icon={<PieChart size={20} />}
                 label="Dashboard"
-                isActive={isActive("/")}
+                isActive={isActive("/dashboard")}
               />
               <SidebarItem 
                 to="/leads"
@@ -178,6 +167,12 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 isActive={isActive("/team")}
               />
               <SidebarItem 
+                to="/analytics"
+                icon={<PieChart size={20} />}
+                label="Analytics"
+                isActive={isActive("/analytics")}
+              />
+              <SidebarItem 
                 to="/trash"
                 icon={<Trash2 size={20} />}
                 label="Trash"
@@ -194,7 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           
           {/* User profile */}
           {user && (
-            <div className="border-t border-gray-200 p-4 relative z-10 bg-gray-50">
+            <div className="border-t border-gray-200 p-4 bg-gray-50">
               <div className="flex items-center gap-3">
                 <Avatar>
                   <AvatarImage src={user.user_metadata?.avatar_url} />
@@ -205,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">{getUserDisplayName()}</p>
                   <p className="text-xs text-gray-600">
-                    <TranslatedText text="User" />
+                    <TranslatedText text="Administrator" />
                   </p>
                 </div>
                 <Button 

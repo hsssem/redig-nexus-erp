@@ -21,7 +21,7 @@ const Index = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // Return null here because AppLayout will handle rendering GridNavigation for "/"
+  // Return null - AppLayout will handle showing GridNavigation for "/"
   return null;
 };
 
