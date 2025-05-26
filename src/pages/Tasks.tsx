@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Filter, MoreHorizontal, CheckCircle, Clock, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -110,7 +109,13 @@ const Tasks = () => {
   const handleDeleteTask = async (task: Task) => {
     const success = await deleteTask(task.id);
     if (success) {
-      addDeletedItem('task', task.id, task.name, task);
+      addDeletedItem({
+        id: task.id,
+        name: task.name,
+        type: 'task',
+        data: task,
+        deletedAt: new Date().toISOString(),
+      });
     }
   };
 

@@ -99,12 +99,13 @@ const Payments = () => {
     if (payment) {
       const success = await deletePayment(paymentId);
       if (success) {
-        addDeletedItem(
-          'payment', 
-          payment.id, 
-          `Payment for ${payment.amount}`, 
-          payment
-        );
+        addDeletedItem({
+          id: payment.id,
+          name: `Payment for ${payment.amount}`,
+          type: 'payment',
+          data: payment,
+          deletedAt: new Date().toISOString(),
+        });
       }
     }
   };

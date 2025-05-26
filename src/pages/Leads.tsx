@@ -247,7 +247,13 @@ const Leads = () => {
         return;
       }
 
-      addDeletedItem('lead', lead.email, lead.name, lead);
+      addDeletedItem({
+        id: lead.id,
+        name: lead.name,
+        type: 'lead',
+        data: lead,
+        deletedAt: new Date().toISOString(),
+      });
       toast({
         title: "Lead Deleted",
         description: `${lead.name} has been moved to trash.`,

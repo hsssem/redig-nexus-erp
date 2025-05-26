@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Plus, Phone, Mail, MoreHorizontal, Filter, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -96,7 +95,13 @@ const Customers = () => {
   const handleDeleteClient = async (client: Client) => {
     const success = await deleteClient(client.id);
     if (success) {
-      addDeletedItem('customer', client.id, client.company_name, client);
+      addDeletedItem({
+        id: client.id,
+        name: client.company_name,
+        type: 'customer',
+        data: client,
+        deletedAt: new Date().toISOString(),
+      });
     }
   };
 
