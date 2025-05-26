@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { teamMembers, TeamMember } from '@/services/mockData';
 import Sidebar from '@/components/layout/Sidebar';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -25,29 +24,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { toast } from 'sonner';
+import { useTeams, TeamMember, CreateTeamMemberData } from '@/hooks/useTeams';
 import { format } from 'date-fns';
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   role: z.string().min(1, "Role is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone number is required"),
-  department: z.string().min(1, "Department is required"),
-  joiningDate: z.string().min(1, "Joining date is required"),
+  phone: z.string().optional(),
   status: z.enum(["active", "inactive", "on-leave"]),
-  avatar: z.string().optional()
+  avatar_url: z.string().optional()
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 const Team = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [teamList, setTeamList] = useState(teamMembers);
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const { teams, loading, createTeamMember, updateTeamMember, deleteTeamMember } = useTeams();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -56,60 +54,49 @@ const Team = () => {
       role: '',
       email: '',
       phone: '',
-      department: '',
-      joiningDate: format(new Date(), 'yyyy-MM-dd'),
       status: 'active',
-      avatar: ''
+      avatar_url: ''
     }
   });
 
-  const handleCreateMember = (data: FormValues) => {
-    // Ensure all required properties are populated
-    const newMember: TeamMember = {
-      id: `${teamList.length + 1}`,
+  const handleCreateMember = async (data: FormValues) => {
+    const memberData: CreateTeamMemberData = {
       name: data.name,
       role: data.role,
       email: data.email,
-      phone: data.phone,
-      department: data.department,
-      joiningDate: data.joiningDate,
+      phone: data.phone || undefined,
       status: data.status,
-      avatar: data.avatar
+      avatar_url: data.avatar_url || undefined
     };
     
-    setTeamList([...teamList, newMember]);
-    toast.success("Team member added successfully");
-    setIsCreateDialogOpen(false);
-  };
-
-  const handleUpdateMember = (data: FormValues) => {
-    if (selectedMember) {
-      const updatedList = teamList.map(member => 
-        member.id === selectedMember.id 
-          ? {
-              ...member,
-              name: data.name,
-              role: data.role,
-              email: data.email,
-              phone: data.phone,
-              department: data.department,
-              joiningDate: data.joiningDate,
-              status: data.status,
-              avatar: data.avatar
-            } 
-          : member
-      );
-      
-      setTeamList(updatedList);
-      toast.success("Team member updated successfully");
-      setIsEditDialogOpen(false);
+    const success = await createTeamMember(memberData);
+    if (success) {
+      setIsCreateDialogOpen(false);
+      form.reset();
     }
   };
 
-  const handleDeleteMember = (id: string) => {
-    const updatedList = teamList.filter(member => member.id !== id);
-    setTeamList(updatedList);
-    toast.success("Team member removed successfully");
+  const handleUpdateMember = async (data: FormValues) => {
+    if (!selectedMember) return;
+    
+    const memberData: Partial<CreateTeamMemberData> = {
+      name: data.name,
+      role: data.role,
+      email: data.email,
+      phone: data.phone || undefined,
+      status: data.status,
+      avatar_url: data.avatar_url || undefined
+    };
+    
+    const success = await updateTeamMember(selectedMember.id, memberData);
+    if (success) {
+      setIsEditDialogOpen(false);
+      setSelectedMember(null);
+    }
+  };
+
+  const handleDeleteMember = async (id: string) => {
+    await deleteTeamMember(id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -125,10 +112,10 @@ const Team = () => {
     }
   };
 
-  const filteredTeamMembers = teamList.filter(member => 
+  const filteredTeamMembers = teams.filter(member => 
     member.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    member.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.role.toLowerCase().includes(searchTerm.toLowerCase())
+    member.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const openViewDialog = (member: TeamMember) => {
@@ -142,14 +129,38 @@ const Team = () => {
       name: member.name,
       role: member.role,
       email: member.email,
-      phone: member.phone,
-      department: member.department,
-      joiningDate: member.joiningDate,
+      phone: member.phone || '',
       status: member.status,
-      avatar: member.avatar || ''
+      avatar_url: member.avatar_url || ''
     });
     setIsEditDialogOpen(true);
   };
+
+  const openCreateDialog = () => {
+    form.reset({
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+      status: 'active',
+      avatar_url: ''
+    });
+    setIsCreateDialogOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen bg-background">
+        <Sidebar />
+        <PageContainer className="flex-1">
+          <PageHeader title="Team" description="Manage your team members" />
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg">Loading team members...</div>
+          </div>
+        </PageContainer>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -173,176 +184,10 @@ const Team = () => {
                 />
               </div>
 
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-primary">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Member
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Add Team Member</DialogTitle>
-                    <DialogDescription>
-                      Add a new member to your team
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleCreateMember)} className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Full Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="John Doe" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="role"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Role</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Software Developer" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="department"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Department</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select department" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Development">Development</SelectItem>
-                                  <SelectItem value="Design">Design</SelectItem>
-                                  <SelectItem value="Project Management">Project Management</SelectItem>
-                                  <SelectItem value="Human Resources">Human Resources</SelectItem>
-                                  <SelectItem value="IT">IT</SelectItem>
-                                  <SelectItem value="Sales">Sales</SelectItem>
-                                  <SelectItem value="Finance">Finance</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <Input placeholder="john@redigerp.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="phone"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Phone</FormLabel>
-                              <FormControl>
-                                <Input placeholder="+1 555-123-4567" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="joiningDate"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Joining Date</FormLabel>
-                              <FormControl>
-                                <Input type="date" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={form.control}
-                          name="status"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Status</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="active">Active</SelectItem>
-                                  <SelectItem value="inactive">Inactive</SelectItem>
-                                  <SelectItem value="on-leave">On Leave</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      
-                      <FormField
-                        control={form.control}
-                        name="avatar"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Avatar URL (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="https://example.com/avatar.png" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <DialogFooter>
-                        <Button type="submit" className="bg-gradient-primary">Add Member</Button>
-                      </DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
+              <Button className="bg-gradient-primary" onClick={openCreateDialog}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Member
+              </Button>
             </div>
 
             <div className="border rounded-md">
@@ -350,10 +195,9 @@ const Team = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Member</TableHead>
-                    <TableHead>Department</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Joining Date</TableHead>
+                    <TableHead>Created</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -364,7 +208,7 @@ const Team = () => {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar>
-                              <AvatarImage src={member.avatar} alt={member.name} />
+                              <AvatarImage src={member.avatar_url} alt={member.name} />
                               <AvatarFallback className="bg-primary text-primary-foreground">
                                 {member.name.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
@@ -375,21 +219,22 @@ const Team = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell>{member.department}</TableCell>
                         <TableCell>
                           <div className="space-y-1">
                             <div className="flex items-center gap-1 text-sm">
                               <Mail className="h-3.5 w-3.5 text-muted-foreground" />
                               {member.email}
                             </div>
-                            <div className="flex items-center gap-1 text-sm">
-                              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                              {member.phone}
-                            </div>
+                            {member.phone && (
+                              <div className="flex items-center gap-1 text-sm">
+                                <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                                {member.phone}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>{getStatusBadge(member.status)}</TableCell>
-                        <TableCell>{member.joiningDate}</TableCell>
+                        <TableCell>{format(new Date(member.created_at), 'MMM dd, yyyy')}</TableCell>
                         <TableCell>
                           <div className="flex justify-center space-x-2">
                             <Button variant="ghost" size="sm" onClick={() => openViewDialog(member)}>
@@ -412,7 +257,7 @@ const Team = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-4">
+                      <TableCell colSpan={5} className="text-center py-4">
                         No team members found
                       </TableCell>
                     </TableRow>
@@ -423,93 +268,18 @@ const Team = () => {
           </CardContent>
         </Card>
         
-        {/* View Team Member Dialog */}
-        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            {selectedMember && (
-              <>
-                <DialogHeader>
-                  <div className="flex flex-col items-center">
-                    <Avatar className="h-20 w-20 mb-2">
-                      <AvatarImage src={selectedMember.avatar} alt={selectedMember.name} />
-                      <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                        {selectedMember.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <DialogTitle className="text-xl font-bold">{selectedMember.name}</DialogTitle>
-                    <DialogDescription className="text-center">
-                      {selectedMember.role} • {selectedMember.department}
-                    </DialogDescription>
-                  </div>
-                </DialogHeader>
-                
-                <div className="space-y-4 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-sm text-muted-foreground">Email</span>
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedMember.email}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-sm text-muted-foreground">Phone</span>
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedMember.phone}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-sm text-muted-foreground">Department</span>
-                      <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedMember.department}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col space-y-1">
-                      <span className="text-sm text-muted-foreground">Joining Date</span>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{selectedMember.joiningDate}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col space-y-1">
-                    <span className="text-sm text-muted-foreground">Status</span>
-                    <div>{getStatusBadge(selectedMember.status)}</div>
-                  </div>
-                </div>
-                
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
-                  <Button className="bg-gradient-primary" onClick={() => openEditDialog(selectedMember)}>
-                    Edit Member
-                  </Button>
-                </DialogFooter>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Edit Team Member Dialog - Similar to Create Dialog but with pre-filled values */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        {/* Create Team Member Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Edit Team Member</DialogTitle>
+              <DialogTitle>Add Team Member</DialogTitle>
               <DialogDescription>
-                Update team member information
+                Add a new member to your team
               </DialogDescription>
             </DialogHeader>
             
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleUpdateMember)} className="space-y-4">
-                {/* Same form fields as Create Dialog, but pre-filled with selectedMember values */}
+              <form onSubmit={form.handleSubmit(handleCreateMember)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -541,27 +311,23 @@ const Team = () => {
                   
                   <FormField
                     control={form.control}
-                    name="department"
+                    name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Department</FormLabel>
+                        <FormLabel>Status</FormLabel>
                         <Select 
                           onValueChange={field.onChange} 
-                          value={field.value}
+                          defaultValue={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select department" />
+                              <SelectValue placeholder="Select status" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Development">Development</SelectItem>
-                            <SelectItem value="Design">Design</SelectItem>
-                            <SelectItem value="Project Management">Project Management</SelectItem>
-                            <SelectItem value="Human Resources">Human Resources</SelectItem>
-                            <SelectItem value="IT">IT</SelectItem>
-                            <SelectItem value="Sales">Sales</SelectItem>
-                            <SelectItem value="Finance">Finance</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                            <SelectItem value="on-leave">On Leave</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -570,7 +336,6 @@ const Team = () => {
                   />
                 </div>
                 
-                {/* Rest of form fields - same as Create Dialog */}
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -579,7 +344,7 @@ const Team = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="john@redigerp.com" {...field} />
+                          <Input placeholder="john@company.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -591,7 +356,7 @@ const Team = () => {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone</FormLabel>
+                        <FormLabel>Phone (Optional)</FormLabel>
                         <FormControl>
                           <Input placeholder="+1 555-123-4567" {...field} />
                         </FormControl>
@@ -601,15 +366,131 @@ const Team = () => {
                   />
                 </div>
                 
+                <FormField
+                  control={form.control}
+                  name="avatar_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Avatar URL (Optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/avatar.png" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <DialogFooter>
+                  <Button type="submit" className="bg-gradient-primary">Add Member</Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Team Member Dialog */}
+        <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            {selectedMember && (
+              <>
+                <DialogHeader>
+                  <div className="flex flex-col items-center">
+                    <Avatar className="h-20 w-20 mb-2">
+                      <AvatarImage src={selectedMember.avatar_url} alt={selectedMember.name} />
+                      <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                        {selectedMember.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <DialogTitle className="text-xl font-bold">{selectedMember.name}</DialogTitle>
+                    <DialogDescription className="text-center">
+                      {selectedMember.role}
+                    </DialogDescription>
+                  </div>
+                </DialogHeader>
+                
+                <div className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-sm text-muted-foreground">Email</span>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{selectedMember.email}</span>
+                      </div>
+                    </div>
+                    
+                    {selectedMember.phone && (
+                      <div className="flex flex-col space-y-1">
+                        <span className="text-sm text-muted-foreground">Phone</span>
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-4 w-4 text-muted-foreground" />
+                          <span>{selectedMember.phone}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-sm text-muted-foreground">Status</span>
+                      <div>{getStatusBadge(selectedMember.status)}</div>
+                    </div>
+                    
+                    <div className="flex flex-col space-y-1">
+                      <span className="text-sm text-muted-foreground">Created</span>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>{format(new Date(selectedMember.created_at), 'MMM dd, yyyy')}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+                  <Button className="bg-gradient-primary" onClick={() => openEditDialog(selectedMember)}>
+                    Edit Member
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Team Member Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Team Member</DialogTitle>
+              <DialogDescription>
+                Update team member information
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleUpdateMember)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="joiningDate"
+                    name="role"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Joining Date</FormLabel>
+                        <FormLabel>Role</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input placeholder="Software Developer" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -643,9 +524,39 @@ const Team = () => {
                   />
                 </div>
                 
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="john@company.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="+1 555-123-4567" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
                 <FormField
                   control={form.control}
-                  name="avatar"
+                  name="avatar_url"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Avatar URL (Optional)</FormLabel>

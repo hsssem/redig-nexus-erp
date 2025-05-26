@@ -2,147 +2,123 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface TeamMember {
   id: string;
   name: string;
-  email: string;
   role: string;
-  status: 'active' | 'inactive';
-  phone: string | null;
-  avatar_url: string | null;
+  email: string;
+  phone?: string;
+  status: 'active' | 'inactive' | 'on-leave';
+  avatar_url?: string;
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
 
+export interface CreateTeamMemberData {
+  name: string;
+  role: string;
+  email: string;
+  phone?: string;
+  status: 'active' | 'inactive' | 'on-leave';
+  avatar_url?: string;
+}
+
 export const useTeams = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [teams, setTeams] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
 
-  const fetchTeamMembers = async () => {
+  const fetchTeams = async () => {
     if (!user) return;
-
+    
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('teams')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching team members:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch team members",
-          variant: "destructive",
-        });
+        console.error('Error fetching teams:', error);
+        toast.error('Failed to load team members');
         return;
       }
 
-      // Map the data to ensure proper typing
-      const typedTeamMembers = (data || []).map(member => ({
-        ...member,
-        status: member.status as 'active' | 'inactive'
-      }));
-
-      setTeamMembers(typedTeamMembers);
+      setTeams(data || []);
     } catch (error) {
-      console.error('Error fetching team members:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch team members",
-        variant: "destructive",
-      });
+      console.error('Error fetching teams:', error);
+      toast.error('Failed to load team members');
     } finally {
       setLoading(false);
     }
   };
 
-  const createTeamMember = async (memberData: Omit<TeamMember, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return false;
+  const createTeamMember = async (data: CreateTeamMemberData): Promise<boolean> => {
+    if (!user) {
+      toast.error('You must be logged in to create team members');
+      return false;
+    }
 
     try {
       const { error } = await supabase
         .from('teams')
-        .insert([
-          {
-            ...memberData,
-            user_id: user.id,
-          }
-        ]);
+        .insert({
+          ...data,
+          user_id: user.id,
+        });
 
       if (error) {
         console.error('Error creating team member:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create team member",
-          variant: "destructive",
-        });
+        toast.error('Failed to create team member');
         return false;
       }
 
-      toast({
-        title: "Success",
-        description: "Team member created successfully",
-      });
-
-      await fetchTeamMembers();
+      toast.success('Team member created successfully');
+      await fetchTeams();
       return true;
     } catch (error) {
       console.error('Error creating team member:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create team member",
-        variant: "destructive",
-      });
+      toast.error('Failed to create team member');
       return false;
     }
   };
 
-  const updateTeamMember = async (id: string, memberData: Partial<TeamMember>) => {
-    if (!user) return false;
+  const updateTeamMember = async (id: string, data: Partial<CreateTeamMemberData>): Promise<boolean> => {
+    if (!user) {
+      toast.error('You must be logged in to update team members');
+      return false;
+    }
 
     try {
       const { error } = await supabase
         .from('teams')
-        .update(memberData)
+        .update(data)
         .eq('id', id)
         .eq('user_id', user.id);
 
       if (error) {
         console.error('Error updating team member:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update team member",
-          variant: "destructive",
-        });
+        toast.error('Failed to update team member');
         return false;
       }
 
-      toast({
-        title: "Success",
-        description: "Team member updated successfully",
-      });
-
-      await fetchTeamMembers();
+      toast.success('Team member updated successfully');
+      await fetchTeams();
       return true;
     } catch (error) {
       console.error('Error updating team member:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update team member",
-        variant: "destructive",
-      });
+      toast.error('Failed to update team member');
       return false;
     }
   };
 
-  const deleteTeamMember = async (id: string) => {
-    if (!user) return false;
+  const deleteTeamMember = async (id: string): Promise<boolean> => {
+    if (!user) {
+      toast.error('You must be logged in to delete team members');
+      return false;
+    }
 
     try {
       const { error } = await supabase
@@ -153,42 +129,30 @@ export const useTeams = () => {
 
       if (error) {
         console.error('Error deleting team member:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete team member",
-          variant: "destructive",
-        });
+        toast.error('Failed to delete team member');
         return false;
       }
 
-      toast({
-        title: "Success",
-        description: "Team member deleted successfully",
-      });
-
-      await fetchTeamMembers();
+      toast.success('Team member deleted successfully');
+      await fetchTeams();
       return true;
     } catch (error) {
       console.error('Error deleting team member:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete team member",
-        variant: "destructive",
-      });
+      toast.error('Failed to delete team member');
       return false;
     }
   };
 
   useEffect(() => {
-    fetchTeamMembers();
+    fetchTeams();
   }, [user]);
 
   return {
-    teamMembers,
+    teams,
     loading,
     createTeamMember,
     updateTeamMember,
     deleteTeamMember,
-    refetch: fetchTeamMembers,
+    refetch: fetchTeams,
   };
 };
