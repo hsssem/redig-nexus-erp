@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Search, Clock, Check, AlertCircle, X } from 'lucide-react';
 import { format } from 'date-fns';
@@ -37,16 +36,27 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useMeetings, Meeting } from '@/hooks/useMeetings';
 import { useToast } from '@/hooks/use-toast';
 
+interface MeetingFormData {
+  subject: string;
+  meeting_date: string;
+  start_time: string;
+  end_time: string;
+  participants: string;
+  notes: string;
+  location: string;
+  status: 'scheduled' | 'completed' | 'canceled';
+}
+
 const Meetings = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
-  const [newMeeting, setNewMeeting] = useState<Partial<Meeting>>({
+  const [newMeeting, setNewMeeting] = useState<MeetingFormData>({
     subject: '',
     meeting_date: '',
     start_time: '',
     end_time: '',
-    participants: [],
+    participants: '',
     notes: '',
     location: '',
     status: 'scheduled'
@@ -77,9 +87,9 @@ const Meetings = () => {
       return;
     }
 
-    const participantsArray = typeof newMeeting.participants === 'string' 
+    const participantsArray = newMeeting.participants
       ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
-      : newMeeting.participants || [];
+      : [];
 
     const success = await createMeeting({
       ...newMeeting,
@@ -92,7 +102,7 @@ const Meetings = () => {
         meeting_date: '',
         start_time: '',
         end_time: '',
-        participants: [],
+        participants: '',
         notes: '',
         location: '',
         status: 'scheduled'
@@ -104,9 +114,9 @@ const Meetings = () => {
   const handleUpdateMeeting = async () => {
     if (!editingMeeting) return;
 
-    const participantsArray = typeof newMeeting.participants === 'string' 
+    const participantsArray = newMeeting.participants
       ? newMeeting.participants.split(',').map(p => p.trim()).filter(Boolean)
-      : newMeeting.participants || [];
+      : [];
 
     const success = await updateMeeting(editingMeeting.id, {
       ...newMeeting,
@@ -135,7 +145,7 @@ const Meetings = () => {
       meeting_date: meeting.meeting_date,
       start_time: meeting.start_time,
       end_time: meeting.end_time,
-      participants: meeting.participants,
+      participants: Array.isArray(meeting.participants) ? meeting.participants.join(', ') : '',
       notes: meeting.notes || '',
       location: meeting.location || '',
       status: meeting.status
@@ -149,7 +159,7 @@ const Meetings = () => {
       meeting_date: '',
       start_time: '',
       end_time: '',
-      participants: [],
+      participants: '',
       notes: '',
       location: '',
       status: 'scheduled'
@@ -421,7 +431,7 @@ const Meetings = () => {
               </Label>
               <Input
                 id="participants"
-                value={Array.isArray(newMeeting.participants) ? newMeeting.participants.join(', ') : newMeeting.participants || ''}
+                value={newMeeting.participants}
                 onChange={(e) => setNewMeeting({ 
                   ...newMeeting, 
                   participants: e.target.value
