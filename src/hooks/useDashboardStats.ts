@@ -47,27 +47,32 @@ export const useDashboardStats = () => {
       // Fetch clients
       const { data: clients } = await supabase
         .from('clients')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       // Fetch projects
       const { data: projects } = await supabase
         .from('projects')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       // Fetch tasks
       const { data: tasks } = await supabase
         .from('tasks')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       // Fetch invoices
       const { data: invoices } = await supabase
         .from('invoices')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       // Fetch payments
       const { data: payments } = await supabase
         .from('payments')
-        .select('*');
+        .select('*')
+        .eq('user_id', user.id);
 
       // Calculate stats
       const totalCustomers = clients?.length || 0;

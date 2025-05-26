@@ -1,141 +1,100 @@
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { useUserSettings } from '@/hooks/useUserSettings';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
-interface TaxConfig {
-  enabled: boolean;
-  rate: number;
+interface DeletedItem {
+  id: string;
   name: string;
+  type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment';
+  data: any; // Store the original data for restoration
+  deletedAt: string;
 }
 
 interface AppSettingsContextType {
-  currencySymbol: string;
-  setCurrencySymbol: (symbol: string) => void;
-  currencyCode: string;
-  setCurrencyCode: (code: string) => void;
-  taxConfig: TaxConfig;
-  setTaxConfig: (config: TaxConfig) => void;
-  deletedItems: {
-    type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment';
-    id: string;
-    name: string;
-    deletedAt: Date;
-    data: any;
-  }[];
-  addDeletedItem: (type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment', id: string, name: string, data: any) => void;
+  deletedItems: DeletedItem[];
+  addToTrash: (item: DeletedItem) => void;
+  restoreItem: (id: string) => DeletedItem | null;
   clearTrash: () => void;
-  restoreItem: (id: string) => any;
-  loading: boolean;
+  permanentlyDelete: (id: string) => void;
 }
 
-const AppSettingsContext = createContext<AppSettingsContextType>({
-  currencySymbol: '$',
-  setCurrencySymbol: () => {},
-  currencyCode: 'USD',
-  setCurrencyCode: () => {},
-  taxConfig: {
-    enabled: false,
-    rate: 19,
-    name: 'VAT'
-  },
-  setTaxConfig: () => {},
-  deletedItems: [],
-  addDeletedItem: () => {},
-  clearTrash: () => {},
-  restoreItem: () => {},
-  loading: true,
-});
+const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
+
+export const useAppSettings = () => {
+  const context = useContext(AppSettingsContext);
+  if (!context) {
+    throw new Error('useAppSettings must be used within an AppSettingsProvider');
+  }
+  return context;
+};
 
 interface AppSettingsProviderProps {
   children: ReactNode;
 }
 
 export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ children }) => {
-  const { settings, loading: dbLoading } = useUserSettings();
-  const [loading, setLoading] = useState(true);
-  
-  // Sync with database settings
-  const [currencySymbol, setCurrencySymbol] = useState(settings.currency_symbol);
-  const [currencyCode, setCurrencyCode] = useState(settings.currency_code);
-  const [taxConfig, setTaxConfig] = useState<TaxConfig>({
-    enabled: settings.tax_enabled,
-    rate: settings.tax_rate,
-    name: settings.tax_name
-  });
-  
-  const [deletedItems, setDeletedItems] = useState<{
-    type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment';
-    id: string;
-    name: string;
-    deletedAt: Date;
-    data: any;
-  }[]>([]);
+  const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
+  const { toast } = useToast();
 
-  // Update local state when database settings change
+  // Load deleted items from localStorage on component mount
   useEffect(() => {
-    if (!dbLoading) {
-      setCurrencySymbol(settings.currency_symbol);
-      setCurrencyCode(settings.currency_code);
-      setTaxConfig({
-        enabled: settings.tax_enabled,
-        rate: settings.tax_rate,
-        name: settings.tax_name
-      });
-      setLoading(false);
-    }
-  }, [settings, dbLoading]);
-  
-  // Add item to trash
-  const addDeletedItem = (
-    type: 'customer' | 'task' | 'meeting' | 'invoice' | 'project' | 'team' | 'lead' | 'payment', 
-    id: string, 
-    name: string, 
-    data: any
-  ) => {
-    setDeletedItems(prev => [
-      ...prev, 
-      { 
-        type, 
-        id, 
-        name, 
-        deletedAt: new Date(), 
-        data 
+    const storedItems = localStorage.getItem('deletedItems');
+    if (storedItems) {
+      try {
+        setDeletedItems(JSON.parse(storedItems));
+      } catch (error) {
+        console.error('Error parsing deleted items from localStorage:', error);
+        localStorage.removeItem('deletedItems');
       }
-    ]);
+    }
+  }, []);
+
+  // Save deleted items to localStorage whenever the state changes
+  useEffect(() => {
+    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+  }, [deletedItems]);
+
+  const addToTrash = (item: DeletedItem) => {
+    setDeletedItems(prev => [...prev, item]);
+    toast({
+      title: "Item moved to trash",
+      description: `${item.type} "${item.name}" has been moved to trash.`,
+    });
   };
-  
-  // Clear all items from trash
-  const clearTrash = () => {
-    setDeletedItems([]);
-  };
-  
-  // Restore item from trash and return its data
-  const restoreItem = (id: string) => {
-    const item = deletedItems.find(item => item.id === id);
-    if (item) {
-      setDeletedItems(prev => prev.filter(i => i.id !== id));
-      return item.data;
+
+  const restoreItem = (id: string): DeletedItem | null => {
+    const itemToRestore = deletedItems.find(item => item.id === id);
+    if (itemToRestore) {
+      setDeletedItems(prev => prev.filter(item => item.id !== id));
+      return itemToRestore;
     }
     return null;
   };
 
+  const clearTrash = () => {
+    setDeletedItems([]);
+  };
+
+  const permanentlyDelete = (id: string) => {
+    setDeletedItems(prev => prev.filter(item => item.id !== id));
+    toast({
+      title: "Item permanently deleted",
+      description: "The item has been permanently deleted and cannot be recovered.",
+      variant: "destructive",
+    });
+  };
+
+  const value: AppSettingsContextType = {
+    deletedItems,
+    addToTrash,
+    restoreItem,
+    clearTrash,
+    permanentlyDelete,
+  };
+
   return (
-    <AppSettingsContext.Provider value={{
-      currencySymbol,
-      setCurrencySymbol,
-      currencyCode,
-      setCurrencyCode,
-      taxConfig,
-      setTaxConfig,
-      deletedItems,
-      addDeletedItem,
-      clearTrash,
-      restoreItem,
-      loading,
-    }}>
+    <AppSettingsContext.Provider value={value}>
       {children}
     </AppSettingsContext.Provider>
   );
 };
-
-export const useAppSettings = () => useContext(AppSettingsContext);
