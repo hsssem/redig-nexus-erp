@@ -1,13 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Home, Users, BriefcaseBusiness, Calendar, FileText, 
-  Settings, Menu, X, LogOut, PieChart, UserCircle, CheckSquare,
-  Trash2, DollarSign, UserPlus, Grid3X3
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from './MobileMenu';
@@ -16,25 +11,23 @@ import TranslatedText from '@/components/language/TranslatedText';
 
 interface SidebarItemProps {
   to: string;
-  icon: React.ReactNode;
   label: string;
   isActive: boolean;
   onClick?: () => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ to, icon, label, isActive, onClick }) => {
+const SidebarItem: React.FC<SidebarItemProps> = ({ to, label, isActive, onClick }) => {
   return (
     <Link
       to={to}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all",
+        "block px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg mx-2",
         isActive 
           ? "bg-darkyellow-100 text-darkyellow-800 border-l-4 border-darkyellow-500" 
           : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
       )}
       onClick={onClick}
     >
-      {icon}
       <TranslatedText text={label} />
     </Link>
   );
@@ -78,20 +71,15 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       >
         <div className="flex h-full flex-col w-full">
           {/* Sidebar header */}
-          <div className="flex items-center px-4 py-6 border-b border-gray-200">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-darkyellow-400 to-darkyellow-600 p-2 rounded-lg shadow-lg">
-                <img src="https://redig-apps.com/assets/img/logos/logo_w.png" alt="Redig" className="h-8 w-auto" />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-gray-800">
-                  <TranslatedText text="ERP System" />
-                </h2>
-                <p className="text-xs text-gray-600">
-                  <TranslatedText text="Digital Platform" />
-                </p>
-              </div>
-            </Link>
+          <div className="flex items-center px-6 py-6 border-b border-gray-200">
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">
+                <TranslatedText text="ERP System" />
+              </h2>
+              <p className="text-sm text-gray-600">
+                <TranslatedText text="Business Platform" />
+              </p>
+            </div>
           </div>
           
           {/* Language selector */}
@@ -100,89 +88,102 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           </div>
           
           {/* Navigation links */}
-          <div className="flex-1 overflow-auto py-4 px-4">
-            <nav className="flex flex-col gap-1">
+          <div className="flex-1 overflow-auto py-6">
+            <nav className="space-y-1">
+              <div className="px-4 py-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Main Menu" />
+                </h3>
+              </div>
+              
               <SidebarItem 
                 to="/"
-                icon={<Grid3X3 size={20} />}
-                label="Grid Menu"
+                label="Home"
                 isActive={isActive("/")}
               />
               <SidebarItem 
                 to="/today"
-                icon={<Home size={20} />}
                 label="Today Overview"
                 isActive={isActive("/today")}
               />
               <SidebarItem 
                 to="/dashboard"
-                icon={<PieChart size={20} />}
                 label="Dashboard"
                 isActive={isActive("/dashboard")}
               />
+              
+              <div className="px-4 py-2 mt-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Business" />
+                </h3>
+              </div>
+              
               <SidebarItem 
                 to="/leads"
-                icon={<UserPlus size={20} />}
                 label="Leads"
                 isActive={isActive("/leads")}
               />
               <SidebarItem 
                 to="/customers"
-                icon={<Users size={20} />}
                 label="Customers"
                 isActive={isActive("/customers")}
               />
               <SidebarItem 
-                to="/tasks"
-                icon={<CheckSquare size={20} />}
-                label="Tasks"
-                isActive={isActive("/tasks")}
-              />
-              <SidebarItem 
-                to="/meetings"
-                icon={<Calendar size={20} />}
-                label="Meetings"
-                isActive={isActive("/meetings")}
+                to="/projects"
+                label="Projects"
+                isActive={isActive("/projects")}
               />
               <SidebarItem 
                 to="/invoices"
-                icon={<FileText size={20} />}
                 label="Invoices"
                 isActive={isActive("/invoices")}
               />
               <SidebarItem 
                 to="/payments"
-                icon={<DollarSign size={20} />}
                 label="Payments"
                 isActive={isActive("/payments")}
               />
+              
+              <div className="px-4 py-2 mt-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="Operations" />
+                </h3>
+              </div>
+              
               <SidebarItem 
-                to="/projects"
-                icon={<BriefcaseBusiness size={20} />}
-                label="Projects"
-                isActive={isActive("/projects")}
+                to="/tasks"
+                label="Tasks"
+                isActive={isActive("/tasks")}
+              />
+              <SidebarItem 
+                to="/meetings"
+                label="Meetings"
+                isActive={isActive("/meetings")}
               />
               <SidebarItem 
                 to="/team"
-                icon={<UserCircle size={20} />}
                 label="Team"
                 isActive={isActive("/team")}
               />
               <SidebarItem 
                 to="/analytics"
-                icon={<PieChart size={20} />}
                 label="Analytics"
                 isActive={isActive("/analytics")}
               />
+              
+              <div className="px-4 py-2 mt-6">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <TranslatedText text="System" />
+                </h3>
+              </div>
+              
               <SidebarItem 
                 to="/trash"
-                icon={<Trash2 size={20} />}
                 label="Trash"
                 isActive={isActive("/trash")}
               />
               <SidebarItem 
                 to="/settings"
-                icon={<Settings size={20} />}
                 label="Settings"
                 isActive={isActive("/settings")}
               />
@@ -207,11 +208,11 @@ const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                 </div>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
+                  size="sm"
                   onClick={logout}
                   className="text-gray-600 hover:bg-gray-200 hover:text-gray-900"
                 >
-                  <LogOut size={18} />
+                  <TranslatedText text="Logout" />
                 </Button>
               </div>
             </div>

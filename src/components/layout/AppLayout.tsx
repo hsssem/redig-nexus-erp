@@ -2,7 +2,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import GridNavigation from './GridNavigation';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -13,14 +12,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   
   console.log('AppLayout rendering for route:', location.pathname);
   
-  // Show ONLY grid navigation on home route - no other layout
-  if (location.pathname === '/') {
-    console.log('Rendering GridNavigation only');
-    return <GridNavigation />;
-  }
-  
-  // For all other routes, show ONLY sidebar layout - no grid navigation
-  console.log('Rendering Sidebar layout for route:', location.pathname);
+  // Use sidebar layout for all routes - no grid navigation
   return (
     <div className="min-h-screen flex w-full bg-gray-50">
       <Sidebar />
