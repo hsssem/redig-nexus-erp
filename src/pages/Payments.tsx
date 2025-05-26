@@ -1,7 +1,5 @@
 
 import React, { useState } from 'react';
-import PageContainer from '@/components/layout/PageContainer';
-import PageHeader from '@/components/layout/PageHeader';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { DollarSign, Plus, Trash2, FileText, BriefcaseBusiness } from 'lucide-react';
+import { DollarSign, Plus, Trash2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -90,7 +88,15 @@ const Payments = () => {
     const success = await createPayment(values);
     if (success) {
       setOpen(false);
-      form.reset();
+      form.reset({
+        invoice_id: "",
+        project_id: "",
+        amount: 0,
+        payment_date: format(new Date(), 'yyyy-MM-dd'),
+        method: "",
+        reference: "",
+        notes: "",
+      });
     }
   };
 
@@ -120,65 +126,56 @@ const Payments = () => {
 
   if (loading) {
     return (
-      <PageContainer>
+      <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">Loading payments...</div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
-      </PageContainer>
+      </div>
     );
   }
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Payment Management"
-        description="Track and manage all payments"
-        action={{
-          label: "Record Payment",
-          onClick: () => setOpen(true),
-        }}
-      />
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Payment Management</h1>
+          <p className="text-gray-600 mt-1">Track and manage all payments</p>
+        </div>
+        <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="mr-2 h-4 w-4" />
+          Record Payment
+        </Button>
+      </div>
 
+      {/* Optimized Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Record New Payment</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold">Record New Payment</DialogTitle>
+            <DialogDescription className="text-gray-600">
               Enter the details of the payment received.
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Payment amount"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="payment_date"
+                  name="amount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Payment Date</FormLabel>
+                      <FormLabel className="text-sm font-medium">Amount *</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="h-10"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -190,19 +187,19 @@ const Payments = () => {
                   name="method"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Payment Method</FormLabel>
+                      <FormLabel className="text-sm font-medium">Payment Method *</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger className="h-10">
                             <SelectValue placeholder="Select method" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent>
+                        <SelectContent className="bg-white border shadow-lg z-50">
                           {paymentMethods.map(method => (
-                            <SelectItem key={method} value={method}>
+                            <SelectItem key={method} value={method} className="hover:bg-gray-100">
                               {method}
                             </SelectItem>
                           ))}
@@ -216,12 +213,26 @@ const Payments = () => {
 
               <FormField
                 control={form.control}
+                name="payment_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Payment Date *</FormLabel>
+                    <FormControl>
+                      <Input type="date" className="h-10" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="reference"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reference Number</FormLabel>
+                    <FormLabel className="text-sm font-medium">Reference Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Transaction reference" {...field} />
+                      <Input placeholder="Transaction reference" className="h-10" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -233,105 +244,130 @@ const Payments = () => {
                 name="notes"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel className="text-sm font-medium">Notes</FormLabel>
                     <FormControl>
-                      <Input placeholder="Additional information" {...field} />
+                      <Input placeholder="Additional information" className="h-10" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="flex justify-end">
-                <Button type="submit">Record Payment</Button>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setOpen(false)}
+                  className="px-6"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 px-6">
+                  Record Payment
+                </Button>
               </div>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Payments</CardTitle>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">Total Payments</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-900">
               {currencySymbol}{totalPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Payments This Month</CardTitle>
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">This Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-gray-900">
               {currencySymbol}{monthlyPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Payments Recorded</CardTitle>
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-600">Total Records</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{payments.length}</div>
+            <div className="text-2xl font-bold text-gray-900">{payments.length}</div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Payments Table */}
       {payments.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <DollarSign className="h-16 w-16 text-muted-foreground opacity-20" />
-            <h3 className="mt-4 text-lg font-medium">No Payments Yet</h3>
-            <p className="text-muted-foreground">Record a payment to get started</p>
-            <Button className="mt-4" onClick={() => setOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Record Payment
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <DollarSign className="h-16 w-16 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Payments Yet</h3>
+            <p className="text-gray-600 mb-6">Record a payment to get started</p>
+            <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Record Payment
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Method</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="w-[100px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {payments.map((payment) => (
-                <TableRow key={payment.id}>
-                  <TableCell>{format(new Date(payment.payment_date), 'PP')}</TableCell>
-                  <TableCell className="font-medium">{currencySymbol}{Number(payment.amount).toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{payment.method}</Badge>
-                  </TableCell>
-                  <TableCell>{payment.reference || "-"}</TableCell>
-                  <TableCell>{payment.notes || "-"}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(payment.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+        <Card className="border border-gray-200 shadow-sm">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-gray-200">
+                  <TableHead className="font-semibold text-gray-900">Date</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Amount</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Method</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Reference</TableHead>
+                  <TableHead className="font-semibold text-gray-900">Notes</TableHead>
+                  <TableHead className="font-semibold text-gray-900 w-[100px]">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {payments.map((payment) => (
+                  <TableRow key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <TableCell className="text-gray-900">
+                      {format(new Date(payment.payment_date), 'PP')}
+                    </TableCell>
+                    <TableCell className="font-medium text-gray-900">
+                      {currencySymbol}{Number(payment.amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-gray-300 text-gray-700">
+                        {payment.method}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      {payment.reference || "-"}
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      {payment.notes || "-"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => handleDelete(payment.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
       )}
-    </PageContainer>
+    </div>
   );
 };
 
