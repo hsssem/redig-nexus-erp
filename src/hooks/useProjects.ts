@@ -44,7 +44,13 @@ export const useProjects = () => {
         return;
       }
 
-      setProjects(data || []);
+      // Map the data to ensure proper typing
+      const typedProjects = (data || []).map(project => ({
+        ...project,
+        status: project.status as 'active' | 'completed' | 'on_hold'
+      }));
+
+      setProjects(typedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
       toast({

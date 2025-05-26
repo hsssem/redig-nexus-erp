@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useUserSettings } from '@/hooks/useUserSettings';
 
 interface DeletedItem {
   id: string;
@@ -10,12 +11,22 @@ interface DeletedItem {
   deletedAt: string;
 }
 
+interface TaxConfig {
+  enabled: boolean;
+  rate: number;
+  name: string;
+}
+
 interface AppSettingsContextType {
   deletedItems: DeletedItem[];
   addToTrash: (item: DeletedItem) => void;
   restoreItem: (id: string) => DeletedItem | null;
   clearTrash: () => void;
   permanentlyDelete: (id: string) => void;
+  currencySymbol: string;
+  taxConfig: TaxConfig;
+  loading: boolean;
+  addDeletedItem: (item: DeletedItem) => void;
 }
 
 const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined);
@@ -35,6 +46,7 @@ interface AppSettingsProviderProps {
 export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ children }) => {
   const [deletedItems, setDeletedItems] = useState<DeletedItem[]>([]);
   const { toast } = useToast();
+  const { settings, loading: settingsLoading } = useUserSettings();
 
   // Load deleted items from localStorage on component mount
   useEffect(() => {
@@ -60,6 +72,10 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
       title: "Item moved to trash",
       description: `${item.type} "${item.name}" has been moved to trash.`,
     });
+  };
+
+  const addDeletedItem = (item: DeletedItem) => {
+    addToTrash(item);
   };
 
   const restoreItem = (id: string): DeletedItem | null => {
@@ -90,6 +106,14 @@ export const AppSettingsProvider: React.FC<AppSettingsProviderProps> = ({ childr
     restoreItem,
     clearTrash,
     permanentlyDelete,
+    currencySymbol: settings.currency_symbol,
+    taxConfig: {
+      enabled: settings.tax_enabled,
+      rate: settings.tax_rate,
+      name: settings.tax_name,
+    },
+    loading: settingsLoading,
+    addDeletedItem,
   };
 
   return (

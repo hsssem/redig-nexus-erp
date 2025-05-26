@@ -43,7 +43,13 @@ export const useTeams = () => {
         return;
       }
 
-      setTeamMembers(data || []);
+      // Map the data to ensure proper typing
+      const typedTeamMembers = (data || []).map(member => ({
+        ...member,
+        status: member.status as 'active' | 'inactive'
+      }));
+
+      setTeamMembers(typedTeamMembers);
     } catch (error) {
       console.error('Error fetching team members:', error);
       toast({
