@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, Filter, MoreHorizontal, CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { tasks, Task } from '@/services/mockData';
+import { Search, Plus, Filter, MoreHorizontal, CheckCircle, Clock, AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import PageContainer from '@/components/layout/PageContainer';
@@ -23,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -42,61 +40,104 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTasks, Task } from '@/hooks/useTasks';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 const Tasks = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [taskList, setTaskList] = useState<Task[]>(tasks);
+  const { tasks, loading, createTask, updateTask, deleteTask } = useTasks();
+  const { addDeletedItem } = useAppSettings();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState<Partial<Task>>({
-    title: '',
+    name: '',
     description: '',
     status: 'todo',
     priority: 'medium',
-    dueDate: '',
-    assignedTo: '',
+    due_date: '',
+    assigned_to: '',
   });
 
-  const filteredTasks = taskList.filter(
+  const filteredTasks = tasks.filter(
     (task) =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase())
+      task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleCreateTask = () => {
-    // Validation
-    if (!newTask.title || !newTask.description || !newTask.dueDate || !newTask.assignedTo) {
-      toast.error('Please fill in all required fields');
+  const handleCreateTask = async () => {
+    if (!newTask.name || !newTask.description || !newTask.due_date || !newTask.assigned_to) {
       return;
     }
 
-    const task: Task = {
-      ...newTask as Task,
-      id: (taskList.length + 1).toString(),
-      createdAt: new Date().toISOString().split('T')[0],
-      status: newTask.status as 'todo' | 'in-progress' | 'review' | 'completed',
-      priority: newTask.priority as 'low' | 'medium' | 'high',
-    };
+    const success = await createTask(newTask);
+    if (success) {
+      setNewTask({
+        name: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        due_date: '',
+        assigned_to: '',
+      });
+      setIsDialogOpen(false);
+    }
+  };
 
-    setTaskList([task, ...taskList]);
+  const handleUpdateTask = async () => {
+    if (!editingTask || !newTask.name) {
+      return;
+    }
+
+    const success = await updateTask(editingTask.id, newTask);
+    if (success) {
+      setEditingTask(null);
+      setNewTask({
+        name: '',
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        due_date: '',
+        assigned_to: '',
+      });
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleStatusChange = async (taskId: string, newStatus: string) => {
+    await updateTask(taskId, { status: newStatus });
+  };
+
+  const handleDeleteTask = async (task: Task) => {
+    const success = await deleteTask(task.id);
+    if (success) {
+      addDeletedItem('task', task.id, task.name, task);
+    }
+  };
+
+  const handleEdit = (task: Task) => {
+    setEditingTask(task);
     setNewTask({
-      title: '',
+      name: task.name,
+      description: task.description || '',
+      status: task.status || 'todo',
+      priority: task.priority || 'medium',
+      due_date: task.due_date || '',
+      assigned_to: task.assigned_to || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingTask(null);
+    setNewTask({
+      name: '',
       description: '',
       status: 'todo',
       priority: 'medium',
-      dueDate: '',
-      assignedTo: '',
+      due_date: '',
+      assigned_to: '',
     });
-    setIsDialogOpen(false);
-    toast.success('Task created successfully');
-  };
-
-  const handleStatusChange = (taskId: string, newStatus: 'todo' | 'in-progress' | 'review' | 'completed') => {
-    setTaskList(
-      taskList.map((task) =>
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
-    );
-    toast.success('Task status updated');
   };
   
   const getPriorityBadge = (priority: string) => {
@@ -166,28 +207,34 @@ const Tasks = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.length > 0 ? (
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Loading tasks...
+                </TableCell>
+              </TableRow>
+            ) : filteredTasks.length > 0 ? (
               filteredTasks.map((task) => (
                 <TableRow key={task.id}>
                   <TableCell>
-                    {getStatusIcon(task.status)}
+                    {getStatusIcon(task.status || 'todo')}
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{task.title}</div>
+                      <div className="font-medium">{task.name}</div>
                       <div className="text-sm text-muted-foreground hidden sm:block">
-                        {task.description.length > 60
+                        {task.description && task.description.length > 60
                           ? `${task.description.substring(0, 60)}...`
                           : task.description}
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">{task.assignedTo}</TableCell>
+                  <TableCell className="hidden md:table-cell">{task.assigned_to || '-'}</TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {getPriorityBadge(task.priority)}
+                    {getPriorityBadge(task.priority || 'medium')}
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                    {task.due_date ? format(new Date(task.due_date), 'MMM d, yyyy') : '-'}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -198,8 +245,10 @@ const Tasks = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit task</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEdit(task)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem 
                           onClick={() => handleStatusChange(task.id, 'completed')}
                           disabled={task.status === 'completed'}
@@ -211,6 +260,13 @@ const Tasks = () => {
                           disabled={task.status === 'in-progress'}
                         >
                           Mark as in progress
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteTask(task)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -228,21 +284,21 @@ const Tasks = () => {
         </Table>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Create New Task</DialogTitle>
+            <DialogTitle>{editingTask ? 'Edit Task' : 'Create New Task'}</DialogTitle>
             <DialogDescription>
-              Add a new task to your list. Fill out the details below.
+              {editingTask ? 'Update the task details.' : 'Add a new task to your list. Fill out the details below.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="name">Title</Label>
               <Input
-                id="title"
-                value={newTask.title}
-                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                id="name"
+                value={newTask.name}
+                onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
                 placeholder="Task title"
               />
             </div>
@@ -260,7 +316,7 @@ const Tasks = () => {
                 <Label htmlFor="priority">Priority</Label>
                 <Select
                   value={newTask.priority}
-                  onValueChange={(value) => setNewTask({ ...newTask, priority: value as any })}
+                  onValueChange={(value) => setNewTask({ ...newTask, priority: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
@@ -275,30 +331,32 @@ const Tasks = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dueDate">Due Date</Label>
+                <Label htmlFor="due_date">Due Date</Label>
                 <Input
-                  id="dueDate"
+                  id="due_date"
                   type="date"
-                  value={newTask.dueDate}
-                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  value={newTask.due_date}
+                  onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="assignedTo">Assign To</Label>
+              <Label htmlFor="assigned_to">Assign To</Label>
               <Input
-                id="assignedTo"
-                value={newTask.assignedTo}
-                onChange={(e) => setNewTask({ ...newTask, assignedTo: e.target.value })}
+                id="assigned_to"
+                value={newTask.assigned_to}
+                onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value })}
                 placeholder="Assign to"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={handleDialogClose}>
               Cancel
             </Button>
-            <Button onClick={handleCreateTask}>Create Task</Button>
+            <Button onClick={editingTask ? handleUpdateTask : handleCreateTask}>
+              {editingTask ? 'Update Task' : 'Create Task'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

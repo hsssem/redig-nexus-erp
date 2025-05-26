@@ -7,101 +7,114 @@ import { Button } from '@/components/ui/button';
 import { Calendar, CheckSquare, Clock, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { invoices } from '@/services/mockData';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
-// Types for today's overview data
 interface TodayTask {
   id: string;
-  title: string;
-  project: string;
+  name: string;
+  description?: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'todo' | 'in-progress' | 'review' | 'completed';
+  status: 'todo' | 'in-progress' | 'completed';
+  assigned_to?: string;
+  due_date?: string;
 }
 
 interface TodayMeeting {
   id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  participants: string[];
+  subject: string;
+  start_time?: string;
+  end_time?: string;
+  participants?: string[];
+  location?: string;
+  meeting_date?: string;
 }
 
 interface TodayInvoice {
   id: string;
-  client: string;
-  amount: number;
-  dueDate: Date;
+  number: string;
+  total: number;
+  due_date: string;
   status: 'draft' | 'sent' | 'paid' | 'overdue';
 }
 
 const TodayOverview: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { currencySymbol } = useAppSettings();
   const today = new Date();
+  const todayString = format(today, 'yyyy-MM-dd');
+  
   const [todaysTasks, setTodaysTasks] = useState<TodayTask[]>([]);
   const [todaysMeetings, setTodaysMeetings] = useState<TodayMeeting[]>([]);
   const [pendingInvoices, setPendingInvoices] = useState<TodayInvoice[]>([]);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // In a real app, these would come from API calls
-    // But for this demo, we'll use mock data
+    if (!user) return;
     
-    // Mock tasks for today
-    setTodaysTasks([
-      {
-        id: "task1",
-        title: "Finalize project proposal",
-        project: "Website Redesign",
-        priority: "high",
-        status: "in-progress"
-      },
-      {
-        id: "task2",
-        title: "Client call preparation",
-        project: "Mobile App Development",
-        priority: "medium",
-        status: "todo"
-      },
-      {
-        id: "task3",
-        title: "Review code changes",
-        project: "E-commerce Platform",
-        priority: "medium",
-        status: "review"
+    const fetchTodayData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch today's tasks (due today or overdue)
+        const { data: tasks } = await supabase
+          .from('tasks')
+          .select('*')
+          .lte('due_date', todayString)
+          .neq('status', 'completed');
+          
+        // Fetch today's meetings
+        const { data: meetings } = await supabase
+          .from('meetings')
+          .select('*')
+          .eq('meeting_date', todayString);
+          
+        // Fetch pending/overdue invoices
+        const { data: invoices } = await supabase
+          .from('invoices')
+          .select('*')
+          .in('status', ['sent', 'overdue']);
+        
+        setTodaysTasks(tasks?.map(task => ({
+          id: task.id,
+          name: task.name,
+          description: task.description || '',
+          priority: (task.priority as 'low' | 'medium' | 'high') || 'medium',
+          status: (task.status as 'todo' | 'in-progress' | 'completed') || 'todo',
+          assigned_to: task.assigned_to || '',
+          due_date: task.due_date || '',
+        })) || []);
+        
+        setTodaysMeetings(meetings?.map(meeting => ({
+          id: meeting.id,
+          subject: meeting.subject,
+          start_time: meeting.start_time || '',
+          end_time: meeting.end_time || '',
+          participants: meeting.participants || [],
+          location: meeting.location || '',
+          meeting_date: meeting.meeting_date || '',
+        })) || []);
+        
+        setPendingInvoices(invoices?.map(invoice => ({
+          id: invoice.id,
+          number: invoice.number,
+          total: Number(invoice.total),
+          due_date: invoice.due_date,
+          status: invoice.status as 'draft' | 'sent' | 'paid' | 'overdue',
+        })) || []);
+        
+      } catch (error) {
+        console.error('Error fetching today data:', error);
+      } finally {
+        setLoading(false);
       }
-    ]);
+    };
     
-    // Mock meetings for today
-    setTodaysMeetings([
-      {
-        id: "meet1",
-        title: "Weekly Team Standup",
-        startTime: "09:00",
-        endTime: "09:30",
-        participants: ["John", "Sarah", "Michael"]
-      },
-      {
-        id: "meet2",
-        title: "Client Progress Review",
-        startTime: "13:00",
-        endTime: "14:00",
-        participants: ["Client A", "Project Manager", "Lead Developer"]
-      }
-    ]);
-    
-    // Get pending/overdue invoices from mock data
-    const overduePending = invoices.filter(inv => 
-      inv.status === 'sent' || inv.status === 'overdue'
-    ).map(inv => ({
-      id: inv.id,
-      client: inv.customer,
-      amount: inv.total,
-      dueDate: new Date(inv.dueDate),
-      status: inv.status
-    }));
-    
-    setPendingInvoices(overduePending);
-  }, []);
+    fetchTodayData();
+  }, [user, todayString]);
   
   const getStatusColor = (status: string) => {
     const colors = {
@@ -126,6 +139,17 @@ const TodayOverview: React.FC = () => {
     return colors[priority as keyof typeof colors] || "bg-slate-400";
   };
   
+  if (!user) {
+    return (
+      <PageContainer>
+        <PageHeader 
+          title="Today's Overview"
+          description="Please log in to view your daily overview"
+        />
+      </PageContainer>
+    );
+  }
+  
   return (
     <PageContainer>
       <PageHeader 
@@ -146,15 +170,20 @@ const TodayOverview: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            {todaysTasks.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6">No tasks scheduled for today</p>
+            {loading ? (
+              <p className="text-center text-muted-foreground py-6">Loading tasks...</p>
+            ) : todaysTasks.length === 0 ? (
+              <p className="text-center text-muted-foreground py-6">No tasks due today</p>
             ) : (
               <div className="space-y-4">
                 {todaysTasks.map(task => (
                   <div key={task.id} className="flex items-start justify-between border-b pb-3">
                     <div>
-                      <h4 className="font-medium">{task.title}</h4>
-                      <p className="text-sm text-muted-foreground">{task.project}</p>
+                      <h4 className="font-medium">{task.name}</h4>
+                      <p className="text-sm text-muted-foreground">{task.description}</p>
+                      {task.assigned_to && (
+                        <p className="text-xs text-muted-foreground">Assigned to: {task.assigned_to}</p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge className={getPriorityColor(task.priority)} variant="secondary">
@@ -183,22 +212,33 @@ const TodayOverview: React.FC = () => {
             </Button>
           </CardHeader>
           <CardContent>
-            {todaysMeetings.length === 0 ? (
+            {loading ? (
+              <p className="text-center text-muted-foreground py-6">Loading meetings...</p>
+            ) : todaysMeetings.length === 0 ? (
               <p className="text-center text-muted-foreground py-6">No meetings scheduled for today</p>
             ) : (
               <div className="space-y-4">
                 {todaysMeetings.map(meeting => (
                   <div key={meeting.id} className="border rounded-lg p-3">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-medium">{meeting.title}</h4>
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {meeting.startTime} - {meeting.endTime}
-                      </Badge>
+                      <h4 className="font-medium">{meeting.subject}</h4>
+                      {meeting.start_time && meeting.end_time && (
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {meeting.start_time} - {meeting.end_time}
+                        </Badge>
+                      )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {meeting.participants.join(", ")}
-                    </p>
+                    {meeting.location && (
+                      <p className="text-sm text-muted-foreground">
+                        Location: {meeting.location}
+                      </p>
+                    )}
+                    {meeting.participants && meeting.participants.length > 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Participants: {meeting.participants.join(", ")}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -219,22 +259,24 @@ const TodayOverview: React.FC = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          {pendingInvoices.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-muted-foreground py-6">Loading invoices...</p>
+          ) : pendingInvoices.length === 0 ? (
             <p className="text-center text-muted-foreground py-6">No pending or overdue invoices</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {pendingInvoices.map(invoice => (
                 <div key={invoice.id} className="border rounded-lg p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-medium">{invoice.client}</h4>
+                    <h4 className="font-medium">Invoice #{invoice.number}</h4>
                     <Badge className={getStatusColor(invoice.status)} variant="secondary">
                       {invoice.status}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-semibold">${invoice.amount}</span>
+                    <span className="text-lg font-semibold">{currencySymbol}{invoice.total}</span>
                     <span className="text-sm text-muted-foreground">
-                      Due: {format(new Date(invoice.dueDate), 'PP')}
+                      Due: {format(new Date(invoice.due_date), 'PP')}
                     </span>
                   </div>
                 </div>

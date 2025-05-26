@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
@@ -10,7 +9,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -268,14 +266,16 @@ const Leads = () => {
 
   const convertToCustomer = async (lead: Lead) => {
     try {
-      // In a real app, you would create a customer record in the clients table
+      // Create customer record in clients table
       const { error } = await supabase
         .from('clients')
         .insert({
           user_id: user?.id,
           company_name: lead.name,
-          notes: `Converted from lead. Original notes: ${lead.notes || ''}`,
+          notes: `Converted from lead. Original notes: ${lead.notes || ''}. Phone: ${lead.phone || 'N/A'}. Email: ${lead.email}`,
           classification: 'Customer',
+          manager: 'Not Assigned',
+          industry: 'Unknown',
         });
 
       if (error) {
@@ -289,8 +289,22 @@ const Leads = () => {
       }
 
       // Remove from leads after successful conversion
-      await handleDelete(lead);
+      const { error: deleteError } = await supabase
+        .from('leads')
+        .delete()
+        .eq('id', lead.id);
+
+      if (deleteError) {
+        console.error('Error deleting lead after conversion:', deleteError);
+        toast({
+          title: "Warning",
+          description: "Customer created but lead wasn't removed",
+          variant: "destructive",
+        });
+        return;
+      }
       
+      await fetchLeads();
       toast({
         title: "Lead Converted",
         description: `${lead.name} has been converted to a customer.`,

@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Plus, Phone, Mail, MoreHorizontal, Filter } from 'lucide-react';
-import { customers, Customer } from '@/services/mockData';
+import { Search, Plus, Phone, Mail, MoreHorizontal, Filter, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import PageContainer from '@/components/layout/PageContainer';
@@ -29,62 +28,100 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { useClients, Client } from '@/hooks/useClients';
+import { useAppSettings } from '@/contexts/AppSettingsContext';
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [customerList, setCustomerList] = useState<Customer[]>(customers);
-  const [newCustomer, setNewCustomer] = useState<Partial<Customer>>({
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    status: 'active',
-    address: '',
+  const { clients, loading, createClient, updateClient, deleteClient } = useClients();
+  const { addDeletedItem } = useAppSettings();
+  const [newClient, setNewClient] = useState<Partial<Client>>({
+    company_name: '',
+    manager: '',
+    industry: '',
+    classification: 'Customer',
+    notes: '',
   });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
-  const filteredCustomers = customerList.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredClients = clients.filter(
+    (client) =>
+      client.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (client.manager && client.manager.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (client.industry && client.industry.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleCreateCustomer = () => {
-    // Validation
-    if (!newCustomer.name || !newCustomer.email || !newCustomer.company) {
-      toast.error('Please fill in all required fields');
+  const handleCreateClient = async () => {
+    if (!newClient.company_name) {
       return;
     }
 
-    const customer: Customer = {
-      ...newCustomer as Customer,
-      id: (customerList.length + 1).toString(),
-      createdAt: new Date().toISOString().split('T')[0],
-      status: newCustomer.status as 'active' | 'inactive' || 'active',
-    };
-
-    setCustomerList([customer, ...customerList]);
-    setNewCustomer({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      status: 'active',
-      address: '',
-    });
-    setIsDialogOpen(false);
-    toast.success('Customer created successfully');
+    const success = await createClient(newClient);
+    if (success) {
+      setNewClient({
+        company_name: '',
+        manager: '',
+        industry: '',
+        classification: 'Customer',
+        notes: '',
+      });
+      setIsDialogOpen(false);
+    }
   };
 
-  const handleDeleteCustomer = (id: string) => {
-    setCustomerList(customerList.filter((customer) => customer.id !== id));
-    toast.success('Customer deleted successfully');
+  const handleUpdateClient = async () => {
+    if (!editingClient || !newClient.company_name) {
+      return;
+    }
+
+    const success = await updateClient(editingClient.id, newClient);
+    if (success) {
+      setEditingClient(null);
+      setNewClient({
+        company_name: '',
+        manager: '',
+        industry: '',
+        classification: 'Customer',
+        notes: '',
+      });
+      setIsDialogOpen(false);
+    }
+  };
+
+  const handleDeleteClient = async (client: Client) => {
+    const success = await deleteClient(client.id);
+    if (success) {
+      addDeletedItem('customer', client.id, client.company_name, client);
+    }
+  };
+
+  const handleEdit = (client: Client) => {
+    setEditingClient(client);
+    setNewClient({
+      company_name: client.company_name,
+      manager: client.manager || '',
+      industry: client.industry || '',
+      classification: client.classification || 'Customer',
+      notes: client.notes || '',
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setEditingClient(null);
+    setNewClient({
+      company_name: '',
+      manager: '',
+      industry: '',
+      classification: 'Customer',
+      notes: '',
+    });
   };
 
   return (
@@ -119,43 +156,36 @@ const Customers = () => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">Company</TableHead>
-              <TableHead className="hidden md:table-cell">Contact</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Manager</TableHead>
+              <TableHead className="hidden md:table-cell">Industry</TableHead>
+              <TableHead className="hidden md:table-cell">Classification</TableHead>
               <TableHead className="hidden lg:table-cell">Created</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredCustomers.length > 0 ? (
-              filteredCustomers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={customer.status === 'active' ? 'default' : 'secondary'}
-                    >
-                      {customer.status}
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  Loading customers...
+                </TableCell>
+              </TableRow>
+            ) : filteredClients.length > 0 ? (
+              filteredClients.map((client) => (
+                <TableRow key={client.id}>
+                  <TableCell className="font-medium">{client.company_name}</TableCell>
+                  <TableCell>{client.manager || '-'}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {client.industry || '-'}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <Badge variant="outline">
+                      {client.classification || 'Customer'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {customer.company}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    <div className="flex flex-col text-sm">
-                      <span className="flex items-center">
-                        <Mail className="mr-1 h-3 w-3 text-muted-foreground" />
-                        {customer.email}
-                      </span>
-                      <span className="flex items-center mt-1">
-                        <Phone className="mr-1 h-3 w-3 text-muted-foreground" />
-                        {customer.phone}
-                      </span>
-                    </div>
-                  </TableCell>
                   <TableCell className="hidden lg:table-cell">
-                    {format(new Date(customer.createdAt), 'MMM d, yyyy')}
+                    {format(new Date(client.created_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -166,9 +196,15 @@ const Customers = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>View details</DropdownMenuItem>
-                        <DropdownMenuItem>Edit customer</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeleteCustomer(customer.id)}>
+                        <DropdownMenuItem onClick={() => handleEdit(client)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClient(client)}
+                          className="text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -187,71 +223,72 @@ const Customers = () => {
         </Table>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Add New Customer</DialogTitle>
+            <DialogTitle>{editingClient ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
             <DialogDescription>
-              Create a new customer record. Fill out the details below.
+              {editingClient ? 'Update the customer details.' : 'Create a new customer record. Fill out the details below.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="company_name">Company Name</Label>
                 <Input
-                  id="name"
-                  value={newCustomer.name}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                  placeholder="Customer name"
+                  id="company_name"
+                  value={newClient.company_name}
+                  onChange={(e) => setNewClient({ ...newClient, company_name: e.target.value })}
+                  placeholder="Company name"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="company">Company</Label>
+                <Label htmlFor="manager">Manager</Label>
                 <Input
-                  id="company"
-                  value={newCustomer.company}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, company: e.target.value })}
-                  placeholder="Company name"
+                  id="manager"
+                  value={newClient.manager}
+                  onChange={(e) => setNewClient({ ...newClient, manager: e.target.value })}
+                  placeholder="Manager name"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="industry">Industry</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={newCustomer.email}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
-                  placeholder="Email address"
+                  id="industry"
+                  value={newClient.industry}
+                  onChange={(e) => setNewClient({ ...newClient, industry: e.target.value })}
+                  placeholder="Industry"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="classification">Classification</Label>
                 <Input
-                  id="phone"
-                  value={newCustomer.phone}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
-                  placeholder="Phone number"
+                  id="classification"
+                  value={newClient.classification}
+                  onChange={(e) => setNewClient({ ...newClient, classification: e.target.value })}
+                  placeholder="Classification"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
-              <Input
-                id="address"
-                value={newCustomer.address}
-                onChange={(e) => setNewCustomer({ ...newCustomer, address: e.target.value })}
-                placeholder="Customer address"
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={newClient.notes}
+                onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+                placeholder="Additional notes"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={handleDialogClose}>
               Cancel
             </Button>
-            <Button onClick={handleCreateCustomer}>Create Customer</Button>
+            <Button onClick={editingClient ? handleUpdateClient : handleCreateClient}>
+              {editingClient ? 'Update Customer' : 'Create Customer'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

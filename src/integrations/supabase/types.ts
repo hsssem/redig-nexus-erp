@@ -183,6 +183,7 @@ export type Database = {
       }
       invoices: {
         Row: {
+          client_id: string | null
           created_at: string | null
           due_date: string
           id: string
@@ -198,6 +199,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           created_at?: string | null
           due_date: string
           id?: string
@@ -213,6 +215,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          client_id?: string | null
           created_at?: string | null
           due_date?: string
           id?: string
@@ -228,6 +231,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_project_id_fkey"
             columns: ["project_id"]
@@ -289,10 +299,14 @@ export type Database = {
         Row: {
           created_at: string | null
           datetime: string
+          end_time: string | null
           id: string
+          location: string | null
+          meeting_date: string | null
           notes: string | null
           participants: string[] | null
           project_id: string | null
+          start_time: string | null
           status: string | null
           subject: string
           updated_at: string | null
@@ -301,10 +315,14 @@ export type Database = {
         Insert: {
           created_at?: string | null
           datetime: string
+          end_time?: string | null
           id?: string
+          location?: string | null
+          meeting_date?: string | null
           notes?: string | null
           participants?: string[] | null
           project_id?: string | null
+          start_time?: string | null
           status?: string | null
           subject: string
           updated_at?: string | null
@@ -313,10 +331,14 @@ export type Database = {
         Update: {
           created_at?: string | null
           datetime?: string
+          end_time?: string | null
           id?: string
+          location?: string | null
+          meeting_date?: string | null
           notes?: string | null
           participants?: string[] | null
           project_id?: string | null
+          start_time?: string | null
           status?: string | null
           subject?: string
           updated_at?: string | null
@@ -325,6 +347,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "meetings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string | null
+          method: string
+          notes: string | null
+          payment_date: string
+          project_id: string | null
+          reference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          method: string
+          notes?: string | null
+          payment_date: string
+          project_id?: string | null
+          reference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string | null
+          method?: string
+          notes?: string | null
+          payment_date?: string
+          project_id?: string | null
+          reference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -386,9 +465,12 @@ export type Database = {
         Row: {
           assigned_to: string | null
           created_at: string | null
+          description: string | null
+          due_date: string | null
           duration: number | null
           id: string
           name: string
+          priority: string | null
           project_id: string | null
           status: string | null
           updated_at: string | null
@@ -397,9 +479,12 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           created_at?: string | null
+          description?: string | null
+          due_date?: string | null
           duration?: number | null
           id?: string
           name: string
+          priority?: string | null
           project_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -408,9 +493,12 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           created_at?: string | null
+          description?: string | null
+          due_date?: string | null
           duration?: number | null
           id?: string
           name?: string
+          priority?: string | null
           project_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -425,6 +513,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      teams: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          role: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          role: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          role?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_settings: {
         Row: {

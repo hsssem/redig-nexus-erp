@@ -1,40 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PageContainer from '@/components/layout/PageContainer';
 import PageHeader from '@/components/layout/PageHeader';
 import StatsCard from '@/components/layout/StatsCard';
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard';
 import RevenueChart from '@/components/dashboard/RevenueChart';
 import StatusDonutChart from '@/components/dashboard/StatusDonutChart';
-import { invoices, calculateStatistics } from '@/services/mockData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppSettings } from '@/contexts/AppSettingsContext';
 import { Users, FileText, BriefcaseBusiness, CheckSquare, Calendar, TrendingUp, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-// Define the ActivityItem type to match what's expected in RecentActivityCard
-type ActivityType = 'invoice' | 'customer' | 'project' | 'task' | 'meeting';
-
-// Define a helper function to ensure type safety
-const getTypeCheckedActivities = (activities: any[]) => {
-  return activities.map(activity => {
-    // Ensure the type is one of the valid types
-    const validType = (activity.type === 'invoice' || 
-                      activity.type === 'customer' || 
-                      activity.type === 'project' || 
-                      activity.type === 'task' || 
-                      activity.type === 'meeting') 
-                    ? activity.type as ActivityType 
-                    : 'task' as ActivityType; 
-    
-    return {
-      ...activity,
-      type: validType
-    };
-  });
-};
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June', 'July', 
@@ -44,17 +22,9 @@ const MONTHS = [
 const Dashboard = () => {
   const { user } = useAuth();
   const { currencySymbol, loading: settingsLoading } = useAppSettings();
+  const { stats, loading: statsLoading } = useDashboardStats();
   const currentMonth = new Date().getMonth();
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
-  const [stats, setStats] = useState(calculateStatistics(currentMonth));
-  
-  useEffect(() => {
-    // Recalculate statistics when the selected month changes
-    setStats(calculateStatistics(selectedMonth));
-  }, [selectedMonth]);
-  
-  // Get type-checked activities
-  const typeSafeActivities = getTypeCheckedActivities(stats.recentActivity);
 
   // Get user display name from Supabase user object
   const getUserDisplayName = () => {
@@ -67,7 +37,7 @@ const Dashboard = () => {
     setSelectedMonth(parseInt(monthIndex));
   };
 
-  if (settingsLoading) {
+  if (settingsLoading || statsLoading) {
     return (
       <PageContainer>
         <PageHeader 
@@ -161,7 +131,7 @@ const Dashboard = () => {
           <RevenueChart data={stats.monthlyRevenueData} />
         </div>
         <div>
-          <RecentActivityCard activities={typeSafeActivities} />
+          <RecentActivityCard activities={[]} />
         </div>
       </div>
       
@@ -174,9 +144,8 @@ const Dashboard = () => {
         <StatusDonutChart 
           title="Invoice Status" 
           data={[
-            { status: 'Paid', count: invoices.filter(i => i.status === 'paid').length },
-            { status: 'Pending', count: invoices.filter(i => i.status === 'sent').length },
-            { status: 'Overdue', count: invoices.filter(i => i.status === 'overdue').length }
+            { status: 'Paid', count: stats.paidInvoices },
+            { status: 'Pending', count: Math.max(0, stats.totalCustomers - stats.paidInvoices) },
           ]} 
         />
       </div>
@@ -199,8 +168,10 @@ const Dashboard = () => {
               <TabsContent value="charts">
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium mb-2">Revenue by Month</h3>
-                    <p className="text-muted-foreground mb-3">Based on your data, May has been your highest revenue month ({currencySymbol}21,000).</p>
+                    <h3 className="font-medium mb-2">Revenue Trend</h3>
+                    <p className="text-muted-foreground mb-3">
+                      Your revenue data shows {stats.monthlyRevenue > 0 ? 'positive growth' : 'no revenue'} this month.
+                    </p>
                     <div className="h-64">
                       <RevenueChart data={stats.monthlyRevenueData} showAnalysis={true} />
                     </div>
@@ -210,44 +181,20 @@ const Dashboard = () => {
               <TabsContent value="projects">
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium">Team Performance</h3>
-                    <p className="text-muted-foreground mb-3">Alice Cooper's team has completed 2 projects, generating the highest revenue.</p>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>Alice Cooper</span>
-                        <span className="font-medium">{currencySymbol}40,000</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Bob Thompson</span>
-                        <span className="font-medium">{currencySymbol}35,000</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Evan Williams</span>
-                        <span className="font-medium">{currencySymbol}30,000</span>
-                      </div>
-                    </div>
+                    <h3 className="font-medium">Project Overview</h3>
+                    <p className="text-muted-foreground mb-3">
+                      You have {stats.activeProjects} active projects and {stats.completedProjects} completed projects.
+                    </p>
                   </div>
                 </div>
               </TabsContent>
               <TabsContent value="clients">
                 <div className="space-y-4">
                   <div className="p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-medium">Top Clients by Revenue</h3>
-                    <p className="text-muted-foreground mb-3">DataFlow Systems is your highest-value client with projects totaling {currencySymbol}120,000.</p>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span>DataFlow Systems</span>
-                        <span className="font-medium">{currencySymbol}120,000</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>Innovate Co</span>
-                        <span className="font-medium">{currencySymbol}50,000</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span>TechCorp Inc.</span>
-                        <span className="font-medium">{currencySymbol}25,000</span>
-                      </div>
-                    </div>
+                    <h3 className="font-medium">Client Overview</h3>
+                    <p className="text-muted-foreground mb-3">
+                      You have {stats.totalCustomers} total customers in your database.
+                    </p>
                   </div>
                 </div>
               </TabsContent>
